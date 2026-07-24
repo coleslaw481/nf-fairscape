@@ -63,8 +63,18 @@ For a minimal end-to-end demo, see [examples/reverse-list](examples/reverse-list
 | `keywords` | `['nextflow', 'workflow']` | Crate/dataset keywords. |
 | `license` | manifest license → Apache-2.0 URI | License URL (use an [SPDX](https://spdx.org/licenses/) URI). |
 | `organization` | none | Optional publisher organization name. |
+| `metadata` | `[:]` | Map of extra fields merged into the root crate entity (e.g. `associatedPublication`, `funder`, `principalInvestigator`). See [Annotating tools and metadata](#annotating-tools-and-metadata). |
 
 Note: Nextflow rejects an *empty* `fairscape { }` block ("Unknown config attribute") — either set at least one option or omit the block entirely.
+
+## Annotating tools and metadata
+
+Two annotation hooks let you enrich the crate beyond what Nextflow knows automatically:
+
+- **Per process** — describe the actual tool a process runs (name, version, author, URL, keywords…) with the `ext fairscape: [...]` directive, in the pipeline or from config.
+- **Per run** — add root-level fields (publication, funder, PI, access terms…) with the `fairscape.metadata` config map.
+
+Both are documented, with the full list of supported keys and validation behavior, in [docs/FAIRSCAPE.md](docs/FAIRSCAPE.md#describing-the-tool-a-process-runs).
 
 ## Identifiers
 

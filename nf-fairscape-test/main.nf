@@ -32,6 +32,13 @@ process ECHO_EXEC {
 }
 
 process WC_SAMPLE {
+    ext fairscape: [
+        softwareName    : 'wc',
+        softwareVersion : '8.32',
+        softwareUrl     : 'https://www.gnu.org/software/coreutils/wc',
+        softwareKeywords: ['coreutils', 'line-counting']
+    ]
+
     input:
     tuple val(id), path(fastq_1), path(fastq_2)
 

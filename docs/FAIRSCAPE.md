@@ -39,18 +39,30 @@ process REVERSE {
         softwareAuthor     : 'Jay Lepreau, David MacKenzie (GNU coreutils)',
         softwareDescription: 'A command-line utility that reverses the order of lines in a text file.',
         softwareUrl        : 'https://www.gnu.org/software/coreutils/tac',
-        softwareFormat     : 'application/x-executable'
+        softwareFormat     : 'application/x-executable',
+        softwareKeywords   : ['coreutils', 'text-processing']
     ]
     ...
 }
 ```
 
-Every key is optional and overrides one field of that process's Software entity:
-`softwareName` → `name`, `softwareVersion` → `version`, `softwareAuthor` → `author`,
-`softwareDescription` → `description`, `softwareUrl` → `contentUrl` (URL or local path),
-`softwareFormat` → `format`. Missing keys keep the process-derived defaults. The process
-name itself is still preserved on every task Computation (`description` and
-`usedSoftware` link), so nothing is lost by renaming the Software entity to the tool.
+The value of `ext.fairscape` **must be a map** (`[key: value, ...]`). Every key is optional
+and overrides exactly one field of that process's `EVI:Software` entity; missing keys keep
+the process-derived default shown below.
+
+| `ext.fairscape` key   | Type            | Software field | Default when omitted |
+| --------------------- | --------------- | -------------- | -------------------- |
+| `softwareName`        | String          | `name`         | the process name (e.g. `REVERSE`) |
+| `softwareVersion`     | String          | `version`      | workflow manifest version, else git commit id |
+| `softwareAuthor`      | String          | `author`       | crate author (`fairscape.author` → manifest author → OS user) |
+| `softwareDescription` | String          | `description`  | the process body source as written in the workflow (must be ≥10 chars, else a generated fallback) |
+| `softwareUrl`         | String (URL or local path) | `contentUrl` | the script/module file that defines the process |
+| `softwareFormat`      | String (MIME type or label) | `format` | `nextflow` |
+| `softwareKeywords`    | List of strings (a bare string is accepted and wrapped in a list) | `keywords` | the crate keywords (`fairscape.keywords`) |
+
+The process name itself is still preserved on every task Computation (its `description` and
+its `usedSoftware` link both reference the process), so nothing is lost by renaming the
+Software entity to the tool it runs.
 
 The same values can be supplied from `nextflow.config` without editing the workflow —
 useful for annotating third-party pipelines:
@@ -62,6 +74,55 @@ process {
     }
 }
 ```
+
+### Validation warnings
+
+The plugin never fails a run over a bad annotation — a crate that can't be built is skipped,
+not fatal — but it does emit a `WARN` to the console and `.nextflow.log` when it finds an
+`ext.fairscape` it will silently ignore, so mistakes don't pass unnoticed:
+
+- **Not a map.** `ext fairscape: ['made-up-property']` (a list) or any non-map value:
+  `process 'X' — ext.fairscape must be a map like [softwareName: 'tac', ...] but was a
+  ArrayList; the annotation will be ignored`.
+- **Unrecognized keys.** `ext fairscape: [madeUpProperty: 'x']`:
+  `process 'X' — ext.fairscape has unrecognized key(s) [madeUpProperty] that will be ignored;
+  supported keys are [softwareName, softwareVersion, ...]`. Known keys in the same map are
+  still applied; only the unknown ones are dropped.
+
+## Adding workflow-level metadata
+
+The process `ext` directive annotates one Software entity. To add fields to the **root**
+crate entity (the `["Dataset", "EVI#ROCrate"]` node describing the run as a whole), set
+`fairscape.metadata` in `nextflow.config` to a map. Each key becomes a property on the root
+node:
+
+```groovy
+fairscape {
+    author  = 'Jane Roe'
+    metadata = [
+        associatedPublication: 'https://doi.org/10.1234/example',
+        funder               : 'NIH Bridge2AI (OT2OD032742)',
+        principalInvestigator: 'Jane Roe',
+        citation             : 'Roe J. et al. Example Pipeline. 2026.',
+        conditionsOfAccess   : 'Available for non-commercial research use only.'
+    ]
+}
+```
+
+Use this for the long tail of root fields that have no dedicated `fairscape.*` option. The
+[FAIRSCAPE profile](https://w3id.org/fairscape/profile/0.1) root entity already recognizes
+many such fields — `associatedPublication`, `citation`, `funder`, `principalInvestigator`,
+`publisher`, `contactEmail`, `conditionsOfAccess`, `copyrightNotice`, `ethicalReview`, and
+the Croissant `rai:*` responsible-AI fields among them — and any other key is preserved as an
+extra property. Values should match the type the field expects (`keywords`, for instance, is
+a list of strings).
+
+Common fields have dedicated options that are easier to set and are documented in the config
+scope: `author`, `description`, `keywords`, `license`, and `organization` (→ `publisher`).
+`fairscape.metadata` is merged **on top of** the computed root, so a key set both ways takes
+its value from `metadata`. The four structural keys the plugin manages — `@id`, `@type`,
+`conformsTo`, and `hasPart` — cannot be overridden; supplying one in `metadata` is ignored
+with a `WARN`.
 
 ## ARK minting
 

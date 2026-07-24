@@ -8,7 +8,8 @@ process REVERSE {
         softwareVersion    : '8.32',
         softwareAuthor     : 'Jay Lepreau, David MacKenzie (GNU coreutils)',
         softwareDescription: 'A command-line utility that reverses the order of lines in a text file.',
-        softwareUrl        : 'https://www.gnu.org/software/coreutils/tac'
+        softwareUrl        : 'https://www.gnu.org/software/coreutils/tac',
+        softwareKeywords   : ['coreutils', 'text-processing']
     ]
 
     input:

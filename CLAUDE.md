@@ -50,11 +50,15 @@ Groovy/Nextflow — explain changes in Python-adjacent terms and point to files.
   `fairscape_models/tests/test_rocrates/LakeDB/ro-crate-metadata.json`).
   `prov:used`/`prov:wasAssociatedWith` mirrors intentionally OMITTED (pydantic
   derives them; fixture validates without).
-- Per-process tool override (2026-07-23): `ext fairscape: [softwareName,
-  softwareVersion, softwareAuthor, softwareDescription, softwareUrl,
-  softwareFormat]` — each key optional, replaces the matching process-Software
-  field (softwareName = the tool BECOMES the entity name; process name survives
-  on task Computations). Read via `processor.config.get('ext')` →
+- Per-process tool override (2026-07-23, `keywords`+warnings added 2026-07-24):
+  `ext fairscape: [softwareName, softwareVersion, softwareAuthor,
+  softwareDescription, softwareUrl, softwareFormat, softwareKeywords]` — each key
+  optional, replaces the matching process-Software field (softwareName = the tool
+  BECOMES the entity name; process name survives on task Computations).
+  `softwareKeywords` (named for parity with the other `software*` keys) → Software
+  `keywords` field (defaults to crate keywords like Datasets; coerced to a string
+  list via `asStringList`, so a bare string is wrapped). Allowed-key set =
+  `KNOWN_EXT_KEYS` constant. Read via `processor.config.get('ext')` →
   `fairscapeExt()` static helper (unit-tested). Also settable from config:
   `process { withName:'X' { ext.fairscape = [...] } }` (verified). Custom BARE
   directives are impossible — Nextflow whitelists directive names
@@ -62,6 +66,21 @@ Groovy/Nextflow — explain changes in Python-adjacent terms and point to files.
   process body is a Groovy labeled statement, silently ignored. `ext` is the
   sanctioned escape hatch. Documented in docs/FAIRSCAPE.md; demoed in both
   examples (letters-chain annotates only REVERSE → mixed default/override).
+- Ext validation warnings (2026-07-24): `fairscapeExtWarnings(ext)` static helper
+  (returns warning strings, pure/testable) → renderer `log.warn`s per process when
+  `ext.fairscape` is present but NOT a map (e.g. `['made-up-property']`) or has
+  unrecognized keys. WARN-only by design: crate render is already best-effort
+  (observer swallows failures), and there's no way to reject a value Nextflow
+  already accepted into `ext`. Verified firing in a real run.
+- Workflow-level root metadata (2026-07-24): `fairscape.metadata = [key: value,
+  ...]` config map (flat scope, new `FairscapeConfig.metadata`, default `[:]`) is
+  overlaid onto the root crate node via `mergeRootMetadata(root, metadata)` —
+  long-tail fields (associatedPublication, funder, principalInvestigator, RAI,
+  etc.) that have no dedicated option. Root `ROCrateMetadataElem` is `extra=allow`
+  and declares most of these, so they validate. metadata wins over computed
+  values; `PROTECTED_ROOT_KEYS` (`@id`,`@type`,`conformsTo`,`hasPart`) can't be
+  overridden (WARN if attempted). This is the workflow-level analogue of process
+  `ext`. Exercised in nf-fairscape-test (metadata + WC_SAMPLE keywords override).
 - Required-field floors: description ≥10 chars (`ensureDescription`), keywords
   non-empty, datePublished/format/author always set, `contentSize` must be a
   STRING (pydantic rejects int — was a real bug).

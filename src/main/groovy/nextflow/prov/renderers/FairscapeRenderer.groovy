@@ -174,7 +174,13 @@ class FairscapeRenderer implements Renderer {
             final ark = mintArk(naan, 'software', processor.name, scriptUrl + '#' + processor.name)
             processArks[processor] = ark
 
-            final userMeta = fairscapeExt(processor.config.get('ext'))
+            final ext = processor.config.get('ext')
+            final userMeta = fairscapeExt(ext)
+            // surface annotation mistakes without failing the run (research: warn on
+            // a non-map value or unrecognized keys the plugin would silently ignore)
+            fairscapeExtWarnings(ext).each { warning ->
+                log.warn("nf-fairscape: process '${processor.name}' — ${warning}" as String)
+            }
 
             // the unresolved source of the process body, as written in the workflow,
             // minus the surrounding quote delimiters
@@ -192,6 +198,7 @@ class FairscapeRenderer implements Renderer {
                 'format'     : userMeta.get('softwareFormat') ?: 'nextflow',
                 'version'    : userMeta.get('softwareVersion') ?: manifest.version ?: metadata.commitId,
                 'contentUrl' : userMeta.get('softwareUrl') ?: scriptUrl,
+                'keywords'   : userMeta.containsKey('softwareKeywords') ? asStringList(userMeta.get('softwareKeywords')) : keywords,
                 'isPartOf'   : [ ['@id': workflowArk] ]
             ])
         }
@@ -277,7 +284,7 @@ class FairscapeRenderer implements Renderer {
         final hasPart = ([runArk] + taskArks.values() + [workflowArk, engineArk] + processArks.values() + fileArks.values().unique(false))
             .collect { id -> ['@id': id] }
 
-        final root = withoutNulls([
+        final Map root = withoutNulls([
             '@id'          : rootArk,
             '@type'        : ['Dataset', EVI_ROCRATE],
             'conformsTo'   : ['@id': 'https://w3id.org/fairscape/profile/0.1'],
@@ -291,6 +298,11 @@ class FairscapeRenderer implements Renderer {
             'publisher'    : config.organization,
             'hasPart'      : hasPart
         ])
+
+        // -- overlay user-supplied workflow-level metadata onto the root entity
+        //    (long-tail fields not covered by dedicated config options). Structural
+        //    keys are managed by the plugin and cannot be overridden.
+        mergeRootMetadata(root, config.metadata)
 
         final descriptor = [
             '@id'       : 'ro-crate-metadata.json',
@@ -352,6 +364,24 @@ class FairscapeRenderer implements Renderer {
     }
 
     /**
+     * The keys nf-fairscape understands inside a process `ext.fairscape` map.
+     * Each overrides one field of that process's Software entity; anything else
+     * is ignored (and warned about via {@link #fairscapeExtWarnings}).
+     */
+    static final List<String> KNOWN_EXT_KEYS = [
+        'softwareName', 'softwareVersion', 'softwareAuthor',
+        'softwareDescription', 'softwareUrl', 'softwareFormat', 'softwareKeywords'
+    ].asImmutable() as List<String>
+
+    /**
+     * Root-crate keys the plugin manages itself; user-supplied
+     * `fairscape.metadata` may not override these without breaking the graph.
+     */
+    static final List<String> PROTECTED_ROOT_KEYS = [
+        '@id', '@type', 'conformsTo', 'hasPart'
+    ].asImmutable() as List<String>
+
+    /**
      * Extract the user-supplied software metadata from a process `ext` directive
      * value (`ext fairscape: [softwareName: ..., ...]`). Returns an empty map when
      * absent or malformed, so callers can fall back to process-derived defaults.
@@ -361,6 +391,66 @@ class FairscapeRenderer implements Renderer {
     static Map fairscapeExt(Object ext) {
         final value = ext instanceof Map ? ext.get('fairscape') : null
         return value instanceof Map ? value : Collections.emptyMap()
+    }
+
+    /**
+     * Validate a process `ext.fairscape` annotation and return human-readable
+     * warnings for anything the plugin will silently ignore: a non-map value
+     * (e.g. `ext fairscape: ['made-up-property']`) or unrecognized keys. Returns
+     * an empty list when the annotation is absent or fully valid. Callers log the
+     * result; nothing here fails the run.
+     *
+     * @param ext the whole `ext` directive value (a map keyed by directive name)
+     */
+    static List<String> fairscapeExtWarnings(Object ext) {
+        if( !(ext instanceof Map) || !((Map) ext).containsKey('fairscape') )
+            return []
+        final value = ((Map) ext).get('fairscape')
+        if( !(value instanceof Map) ) {
+            final type = value == null ? 'null' : value.getClass().getSimpleName()
+            return ["ext.fairscape must be a map like [softwareName: 'tac', softwareVersion: '8.32'] " +
+                "but was a ${type}; the annotation will be ignored" as String]
+        }
+        final unknown = ((Map) value).keySet().findAll { key -> !KNOWN_EXT_KEYS.contains(key) }
+        if( unknown )
+            return ["ext.fairscape has unrecognized key(s) ${unknown.toList()} that will be ignored; " +
+                "supported keys are ${KNOWN_EXT_KEYS}" as String]
+        return []
+    }
+
+    /**
+     * Overlay user-supplied root metadata onto the root crate map in place,
+     * skipping null values and plugin-managed structural keys (a skipped
+     * structural key is warned about).
+     *
+     * @param root     the assembled root crate map (mutated)
+     * @param metadata the user's `fairscape.metadata` map (may be empty)
+     */
+    protected void mergeRootMetadata(Map root, Map metadata) {
+        if( !metadata )
+            return
+        metadata.each { key, value ->
+            final k = key as String
+            if( PROTECTED_ROOT_KEYS.contains(k) )
+                log.warn("nf-fairscape: fairscape.metadata key '${k}' is managed by the plugin and cannot be overridden; ignoring" as String)
+            else if( value != null )
+                root.put(k, value)
+        }
+    }
+
+    /**
+     * Coerce a user-supplied keywords value into a list of strings: a list is
+     * mapped element-wise, a scalar is wrapped in a singleton list, null stays
+     * null. Keeps `keywords` well-formed even when written as a bare string.
+     *
+     * @param value
+     */
+    static List<String> asStringList(Object value) {
+        if( value == null )
+            return null
+        if( value instanceof List )
+            return ((List) value).collect { item -> item?.toString() } as List<String>
+        return [value.toString()]
     }
 
     /**

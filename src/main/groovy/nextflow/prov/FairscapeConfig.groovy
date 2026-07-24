@@ -92,6 +92,18 @@ class FairscapeConfig implements ConfigScope {
     ''')
     final String organization
 
+    @ConfigOption
+    @Description('''
+        A map of additional metadata merged into the root RO-Crate entity, for
+        fields not covered by the dedicated options above (e.g.
+        `associatedPublication`, `funder`, `principalInvestigator`, `citation`,
+        `conditionsOfAccess`). Keys become properties on the root Dataset. The
+        structural keys `@id`, `@type`, `conformsTo` and `hasPart` are managed by
+        the plugin and cannot be overridden. Example:
+        `fairscape.metadata = [associatedPublication: 'https://doi.org/...', funder: 'NIH ...']`.
+    ''')
+    final Map metadata
+
     /* required by extension point -- do not remove */
     FairscapeConfig() {}
 
@@ -106,5 +118,6 @@ class FairscapeConfig implements ConfigScope {
         keywords = opts.keywords as List<String> ?: ['nextflow', 'workflow']
         license = opts.license
         organization = opts.organization
+        metadata = opts.metadata as Map ?: [:]
     }
 }

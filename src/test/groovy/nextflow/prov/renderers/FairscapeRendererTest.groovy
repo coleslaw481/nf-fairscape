@@ -70,4 +70,47 @@ class FairscapeRendererTest extends Specification {
         [fairscape: [softwareName: 'tac', softwareVersion: '8.32']] | [softwareName: 'tac', softwareVersion: '8.32']
     }
 
+    def 'should not warn for absent or valid ext.fairscape annotations' () {
+        expect:
+        FairscapeRenderer.fairscapeExtWarnings(ext).isEmpty()
+
+        where:
+        ext << [
+            null,
+            'not a map',
+            [args: '--verbose'],                                   // no fairscape key
+            [fairscape: [softwareName: 'tac', softwareKeywords: ['cli']]], // all known keys
+        ]
+    }
+
+    def 'should warn when ext.fairscape is present but not a map' () {
+        when:
+        def warnings = FairscapeRenderer.fairscapeExtWarnings([fairscape: ['made-up-property']])
+        then:
+        warnings.size() == 1
+        warnings[0].contains('must be a map')
+        warnings[0].contains('ignored')
+    }
+
+    def 'should warn about unrecognized ext.fairscape keys' () {
+        when:
+        def warnings = FairscapeRenderer.fairscapeExtWarnings([fairscape: [softwareName: 'tac', madeUpProperty: 'x']])
+        then:
+        warnings.size() == 1
+        warnings[0].contains('unrecognized')
+        warnings[0].contains('madeUpProperty')
+        warnings[0].contains('supported keys')
+    }
+
+    def 'should coerce keywords into a list of strings' () {
+        expect:
+        FairscapeRenderer.asStringList(value) == expected
+
+        where:
+        value               | expected
+        null                | null
+        'cli'               | ['cli']
+        ['cli', 'genomics'] | ['cli', 'genomics']
+    }
+
 }

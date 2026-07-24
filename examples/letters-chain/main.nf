@@ -7,8 +7,10 @@ process MAKE_LIST {
     ext fairscape: [
         softwareName       : 'head',
         softwareVersion    : '8.32',
+        softwareAuthor     : 'David MacKenzie, Jim Meyering (GNU coreutils)',
         softwareDescription: 'GNU coreutils head — here it takes the first n lines of a bash-generated a-to-z sequence to build the letter list.',
-        softwareUrl        : 'https://www.gnu.org/software/coreutils/head'
+        softwareUrl        : 'https://www.gnu.org/software/coreutils/head',
+        softwareKeywords   : ['coreutils', 'text-processing']
     ]
 
     input:
@@ -30,8 +32,10 @@ process REVERSE {
     ext fairscape: [
         softwareName       : 'tac',
         softwareVersion    : '8.32',
+        softwareAuthor     : 'Jay Lepreau, David MacKenzie (GNU coreutils)',
         softwareDescription: 'GNU coreutils tac — a command-line utility that reverses the order of lines in a text file.',
-        softwareUrl        : 'https://www.gnu.org/software/coreutils/tac'
+        softwareUrl        : 'https://www.gnu.org/software/coreutils/tac',
+        softwareKeywords   : ['coreutils', 'text-processing']
     ]
 
     input:
@@ -53,8 +57,10 @@ process SPLIT_HALVES {
     ext fairscape: [
         softwareName       : 'GNU coreutils (wc, head, tail)',
         softwareVersion    : '8.32',
+        softwareAuthor     : 'GNU coreutils authors (wc: Paul Rubin, David MacKenzie)',
         softwareDescription: 'GNU coreutils text utilities — wc counts the lines, then head and tail split the reversed list into a first and second half.',
-        softwareUrl        : 'https://www.gnu.org/software/coreutils/'
+        softwareUrl        : 'https://www.gnu.org/software/coreutils/',
+        softwareKeywords   : ['coreutils', 'text-processing', 'partitioning']
     ]
 
     input:

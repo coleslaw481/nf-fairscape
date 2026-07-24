@@ -33,9 +33,18 @@ in the `MAKE_LIST` command (`head -n 8`).
 
 Every step carries an `ext fairscape: [...]` tool annotation, so each Software
 entity names the GNU coreutils tool it runs (`head`, `tac`, and `wc`/`head`/`tail`)
-with its version and homepage instead of the process-derived default. The
-annotation is optional per process, so any of these could be dropped to fall back
-to the workflow-derived Software.
+with a full `softwareName` / `softwareVersion` / `softwareAuthor` /
+`softwareDescription` / `softwareUrl` / `softwareKeywords` set instead of the
+process-derived default. The annotation is optional per process, so any of these
+could be dropped to fall back to the workflow-derived Software.
+
+The root RO-Crate entity is described two ways: core fields via dedicated
+`fairscape` options (`author`, `description`, `keywords`, `license`,
+`organization` → `publisher`), and the long tail via `fairscape.metadata` (here
+`name`, `principalInvestigator`, `funder`, `associatedPublication`, `citation`,
+`contactEmail`, `conditionsOfAccess`, `copyrightNotice`) merged onto the root —
+the run-level counterpart of the per-process `ext` annotation. See
+`docs/FAIRSCAPE.md` for both mechanisms.
 
 `results/provenance-graph.{json,html}` were built with:
 
