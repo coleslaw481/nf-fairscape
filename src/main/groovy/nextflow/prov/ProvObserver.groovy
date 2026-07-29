@@ -17,6 +17,7 @@
 package nextflow.prov
 
 import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.PathMatcher
 import java.util.concurrent.locks.Lock
@@ -26,6 +27,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import nextflow.Session
 import nextflow.processor.TaskRun
+import nextflow.prov.datasheet.CrateArtifacts
 import nextflow.prov.renderers.FairscapeRenderer
 import nextflow.trace.TraceObserverV2
 import nextflow.trace.event.FilePublishEvent
@@ -56,7 +58,10 @@ class ProvObserver implements TraceObserverV2 {
 
     private Lock lock = new ReentrantLock()
 
+    private FairscapeConfig config
+
     ProvObserver(FairscapeConfig config) {
+        this.config = config
         this.renderers = [ new FairscapeRenderer(config) as Renderer ]
         this.matchers = config.patterns.collect( pattern ->
             FileSystems.getDefault().getPathMatcher("glob:**/${pattern}")
@@ -119,14 +124,47 @@ class ProvObserver implements TraceObserverV2 {
         if( !session.isSuccess() )
             return
 
+        boolean rendered = true
         for( final renderer : renderers ) {
             try {
                 renderer.render(session, tasks, workflowOutputs, publishedFiles)
             }
-            catch( Exception e ) {
+            catch( Throwable e ) {
+                rendered = false
                 log.warn "Error occurred while rendering FAIRSCAPE provenance crate -- see Nextflow log for details"
                 log.debug "Error rendering FAIRSCAPE provenance crate", e
             }
+        }
+
+        if( rendered )
+            renderDerivedArtifacts()
+    }
+
+    /**
+     * Build the datasheet and evidence graph from the crate that was just
+     * written -- the plugin's equivalent of running `fairscape build datasheet`
+     * and `fairscape build evidence-graph` on the results directory. Failures
+     * are logged and never fail the run, matching how the crate itself is
+     * rendered.
+     */
+    private void renderDerivedArtifacts() {
+        if( !config.datasheet && !config.evidenceGraph && !config.linkInverses && !config.linkml )
+            return
+
+        try {
+            final metadataFile = (config.file as Path).complete()
+            if( !Files.exists(metadataFile) ) {
+                log.debug "FAIRSCAPE crate not found at ${metadataFile} -- skipping datasheet and provenance graph"
+                return
+            }
+            CrateArtifacts.generate(metadataFile, config.linkInverses, config.evidenceGraph,
+                config.linkml, config.datasheet, config.published)
+        }
+        // Throwable, not Exception: a cyclic or malformed crate can surface as a
+        // StackOverflowError, and derived artifacts must never fail the run
+        catch( Throwable e ) {
+            log.warn "Error occurred while building the FAIRSCAPE datasheet or provenance graph -- see Nextflow log for details"
+            log.debug "Error building FAIRSCAPE derived artifacts", e
         }
     }
 

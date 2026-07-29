@@ -1,0 +1,194 @@
+<div class="summary-section">
+  <h2>Release Overview</h2>
+  <div class="summary-row">
+    <div class="summary-label">ROCrate ID</div>
+    <div class="summary-value" id="accession">
+      {% if published %}
+      <a href="https://fairscape.net/{{ id_value }}">{{ id_value }}</a>
+      {% else %} {{ id_value }} {% endif %}
+    </div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">DOI</div>
+    <div class="summary-value" id="doi">
+      {% if doi %}
+      <a href="{{ doi }}" target="_blank">{{ doi }}</a>
+      {% else %} None {% endif %}
+    </div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Release Date</div>
+    <div class="summary-value" id="release-date">{{ release_date }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Size</div>
+    <div class="summary-value" id="content-size">{{ content_size }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Description</div>
+    <div class="summary-value" id="description">{{ description }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Authors</div>
+    <div class="summary-value" id="authors">{{ authors }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Publisher</div>
+    <div class="summary-value" id="publisher">{{ publisher }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Principal Investigator</div>
+    <div class="summary-value" id="principal-investigator">
+      {{ principal_investigator }}
+    </div>
+  </div>
+  {% if contact_email %}
+  <div class="summary-row">
+    <div class="summary-label">Contact Email</div>
+    <div class="summary-value" id="contact-email">
+      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+    </div>
+  </div>
+  {% endif %} {% if data_governance %}
+  <div class="summary-row">
+    <div class="summary-label">Data Governance Committee</div>
+    <div class="summary-value" id="data-governance">{{ data_governance }}</div>
+  </div>
+  {% endif %} {% if ethical_review %}
+  <div class="summary-row">
+    <div class="summary-label">Ethical Review</div>
+    <div class="summary-value" id="data-governance">{{ ethical_review }}</div>
+  </div>
+  {% endif %}
+  <div class="summary-row">
+    <div class="summary-label">Copyright</div>
+    <div class="summary-value" id="copyright">{{ copyright }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">License</div>
+    <div class="summary-value" id="license">
+      {% if license_value %}
+      <a href="{{ license_value }}" target="_blank">{{ license_value }}</a>
+      {% else %} Not specified {% endif %}
+    </div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Terms of Use</div>
+    <div class="summary-value" id="terms-of-use">{{ terms_of_use }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">HL7 Confidentiality Level</div>
+    <div class="summary-value" id="confidentiality-level">
+      {{ confidentiality_level }}
+    </div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Keywords</div>
+    <div class="summary-value" id="keywords">
+      {% if keywords is string %} {{ keywords }} {% else %} {{ keywords|join(',
+      ') }} {% endif %}
+    </div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Citation</div>
+    <div class="summary-value" id="citation">
+      {% if citation is string %}{{ citation }}{% else %}
+      <ul class="publications-list">
+        {% for c in citation %}
+        <li>{{ c }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-label">Funding</div>
+    <div class="summary-value" id="funding">{{ funding }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Completeness</div>
+    <div class="summary-value" id="completeness">{{ completeness }}</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-label">Related Publications</div>
+    <div class="summary-value" id="related-publications">
+      {% if related_publications %}
+      <ul class="publications-list">
+        {% for pub in related_publications %}
+        <li>{{ pub }}</li>
+        {% endfor %}
+      </ul>
+      {% else %} None {% endif %}
+    </div>
+  </div>
+
+  <div class="regulatory-section">
+    <h3>Human Subjects & Regulatory Information</h3>
+    <div class="regulatory-grid">
+      <div class="regulatory-item">
+        <span class="regulatory-label">Human Subjects Research:</span> {{
+        human_subject_research }}
+      </div>
+      <div class="regulatory-item">
+        <span class="regulatory-label">De-identified Samples:</span> {{
+        deidentified_samples }}
+      </div>
+      <div class="regulatory-item">
+        <span class="regulatory-label">FDA Regulated:</span> {{ fda_regulated }}
+      </div>
+      <div class="regulatory-item">
+        <span class="regulatory-label">IRB Protocol ID:</span> {{
+        irb_protocol_id }}
+      </div>
+    </div>
+
+    <div class="irb-detail">
+      <span class="regulatory-label">Institutional Review Board:</span>
+      {% if irb is mapping %}
+      <div class="irb-org">
+        <span class="irb-name">{{ irb.name }}</span>
+        {% if irb.contactPoint %}
+        <div class="irb-contact">
+          {% if irb.contactPoint.contactType %}
+          <span class="irb-contact-type"
+            >{{ irb.contactPoint.contactType }}</span
+          >
+          {% endif %} {% if irb.contactPoint.email %}
+          <a href="mailto:{{ irb.contactPoint.email }}"
+            >{{ irb.contactPoint.email }}</a
+          >
+          {% endif %} {% if irb.contactPoint.telephone %}
+          <span>{{ irb.contactPoint.telephone }}</span>
+          {% endif %}
+        </div>
+        {% endif %} {% if irb.address %}
+        <div class="irb-address">
+          {% if irb.address.streetAddress %}{{ irb.address.streetAddress }}, {%
+          endif %} {% if irb.address.addressLocality %}{{
+          irb.address.addressLocality }}, {% endif %} {% if
+          irb.address.addressRegion %}{{ irb.address.addressRegion }} {% endif
+          %} {% if irb.address.postalCode %}{{ irb.address.postalCode }}{% endif
+          %} {% if irb.address.addressCountry %}, {{ irb.address.addressCountry
+          }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% else %} {{ irb }} {% endif %}
+    </div>
+
+    {% if human_subject_exemptions and human_subject_exemptions != "N/A" %}
+    <div class="regulatory-exemptions">
+      <span class="regulatory-label">Human Subjects Exemptions:</span>
+      <p>{{ human_subject_exemptions }}</p>
+    </div>
+    {% else %}
+    <div class="regulatory-grid">
+      <div class="regulatory-item">
+        <span class="regulatory-label">Human Subjects Exemptions:</span> {{
+        human_subject_exemptions }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>

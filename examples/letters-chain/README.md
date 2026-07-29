@@ -46,7 +46,16 @@ The root RO-Crate entity is described two ways: core fields via dedicated
 the run-level counterpart of the per-process `ext` annotation. See
 `docs/FAIRSCAPE.md` for both mechanisms.
 
-`results/provenance-graph.{json,html}` were built with:
+The run also writes the derived artifacts next to the crate — open either in a browser:
+
+```bash
+xdg-open results/provenance-graph.html    # the full chain, interactive
+xdg-open results/ro-crate-datasheet.html  # datasheet + AI-Readiness score
+```
+
+`results/provenance-graph.{json,html}` are rooted at the crate, so both halves and
+everything upstream of them are in one graph. For a graph rooted at a single entity,
+use the CLI:
 
 ```bash
 fairscape-cli build evidence-graph results <ark of second_half.txt from the crate>

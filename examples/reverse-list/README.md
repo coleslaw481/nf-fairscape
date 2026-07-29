@@ -42,7 +42,15 @@ assembled root with:
 python3 -c "import json; r=[n for n in json.load(open('results/ro-crate-metadata.json'))['@graph'] if 'ROCrate' in str(n.get('@type'))][0]; [print(f'{k:22} {r[k]}') for k in ('name','description','author','keywords','license','publisher','funder','principalInvestigator','associatedPublication','citation','contactEmail','conditionsOfAccess','copyrightNotice') if k in r]"
 ```
 
-Build the provenance graph for the published output (JSON + interactive HTML):
+The run also writes the derived artifacts next to the crate — open either in a browser:
+
+```bash
+xdg-open results/provenance-graph.html    # interactive evidence graph
+xdg-open results/ro-crate-datasheet.html  # datasheet + AI-Readiness score
+```
+
+The graph is rooted at the crate, so it covers every published output at once. To build
+one for a single entity instead, use the CLI:
 
 ```bash
 fairscape-cli build evidence-graph results <ark of reversed.txt from the crate>

@@ -104,6 +104,159 @@ class FairscapeConfig implements ConfigScope {
     ''')
     final Map metadata
 
+    @ConfigOption
+    @Description('''
+        Render `ro-crate-datasheet.html` (and `ai_ready_score.json`) next to the
+        crate once the run completes, the Groovy equivalent of
+        `fairscape build datasheet` (default: `true`).
+    ''')
+    final boolean datasheet
+
+    @ConfigOption
+    @Description('''
+        Build `provenance-graph.json` and the self-contained
+        `provenance-graph.html` viewer next to the crate once the run completes,
+        the Groovy equivalent of `fairscape build evidence-graph`. Also records
+        `EVI:inputs`/`EVI:outputs` on the crate root (default: `true`).
+    ''')
+    final boolean evidenceGraph
+
+    @ConfigOption
+    @Description('''
+        Render the datasheet as a published release, which turns crate and
+        sub-crate identifiers into resolver links (default: `false`).
+    ''')
+    final boolean published
+
+    @ConfigOption
+    @Description('''
+        Complete every `owl:inverseOf` pair the EVI ontology declares, so a
+        relationship stated once appears on both entities — most visibly
+        `generated` on a Computation for every file that names it in
+        `generatedBy`. The Groovy equivalent of `fairscape augment
+        link-inverses` (default: `true`).
+    ''')
+    final boolean linkInverses
+
+    @ConfigOption
+    @Description('''
+        Write `ro-crate-linkml.yaml`, the crate root translated into a D4D
+        (Datasheets for Datasets) document, the Groovy equivalent of
+        `fairscape build linkml` (default: `true`).
+    ''')
+    final boolean linkml
+
+    @ConfigOption
+    @Description('''
+        Describe the files *inside* a published directory as their own Dataset
+        entities, each `generatedBy` the task that produced the directory and
+        `isPartOf` the directory's Dataset. Without this a process that publishes
+        a whole output directory contributes exactly one opaque Dataset with no
+        size, format or checksum (default: `false`).
+    ''')
+    final boolean expandDirectories
+
+    @ConfigOption
+    @Description('''
+        Glob patterns limiting which files inside a published directory are
+        expanded when `expandDirectories` is enabled. Empty (the default) expands
+        every file. Patterns are matched against the whole path, e.g.
+        `['**/*.tsv', '**/*.csv']`.
+    ''')
+    final List<String> expandPatterns
+
+    @ConfigOption
+    @Description('''
+        Maximum number of files expanded per published directory (default:
+        `1000`). Directories with more matching files are truncated and a warning
+        naming the directory and the number of files dropped is logged.
+    ''')
+    final int expandMaxFiles
+
+    @ConfigOption
+    @Description('''
+        Record an `md5` checksum on every Dataset entity that resolves to a
+        readable local file (default: `false`). Checksums are what the AI-Ready
+        "verifiable" criterion looks for; the cost is one full read of every
+        described file.
+    ''')
+    final boolean checksums
+
+    @ConfigOption
+    @Description('''
+        Measure directories as well as files: give each directory Dataset the
+        recursive `contentSize` of its contents, and the crate root the total
+        size of the crate directory (default: `false`). Regular files always
+        carry their own `contentSize`; this option only controls the directory
+        walks, which are worth opting out of when the crate is published to an
+        object store where walking means LIST/HEAD traffic.
+    ''')
+    final boolean contentSizes
+
+    @ConfigOption
+    @Description('''
+        Infer an `EVI:Schema` entity for every described csv/tsv file and link it
+        from that file's Dataset via `evi:schema` — the Groovy equivalent of
+        `fairscape-cli schema infer` (default: `false`).
+    ''')
+    final boolean schemas
+
+    @ConfigOption
+    @Description('''
+        Glob patterns selecting which described files get a schema when `schemas`
+        is enabled (default: `['**/*.csv', '**/*.tsv']`). Only extensions the
+        inferrer supports are ever considered.
+    ''')
+    final List<String> schemaPatterns
+
+    @ConfigOption
+    @Description('''
+        Number of data rows read when inferring a schema (default: `100`, the
+        frictionless default that `fairscape-cli schema infer` uses).
+    ''')
+    final int schemaSampleSize
+
+    @ConfigOption
+    @Description('''
+        Collapse a trailing run of at least this many identically-typed columns
+        into a single spanning-array property (`index: "N::"`), so a
+        1024-dimension embedding table is described as one `array` column instead
+        of 1024 scalar ones. `0` (the default) keeps every column.
+    ''')
+    final int schemaArrayThreshold
+
+    @ConfigOption
+    @Description('''
+        Maximum number of schemas inferred per run (default: `500`). Excess files
+        are skipped and a warning naming the number skipped is logged.
+    ''')
+    final int schemaMaxFiles
+
+    @ConfigOption
+    @Description('''
+        Describe the container each task ran in (default: `false`). Task
+        Computations always carry `containerImage`, but that is the image
+        REFERENCE the `container` directive resolved to — typically a mutable
+        tag. With this enabled the plugin asks the container engine for each
+        distinct image's content digest once, and records `containerImage`,
+        `containerDigest` and `containerImageId` on the process Software entity
+        as well as `containerDigest` on the task Computations, so the crate
+        identifies the bits that ran rather than a label that can be repointed
+        tomorrow. Note a digest pins content, not availability: a locally built
+        image gets a valid digest that exists nowhere else. Off by default
+        because it shells out to the container engine once per distinct image.
+    ''')
+    final boolean containerProvenance
+
+    @ConfigOption
+    @Description('''
+        Command used to resolve image digests when `containerProvenance` is
+        enabled (default: inferred from the enabled container engine, falling
+        back to `docker`). Set this when the engine binary is not on the PATH
+        under its usual name.
+    ''')
+    final String containerEngineCommand
+
     /* required by extension point -- do not remove */
     FairscapeConfig() {}
 
@@ -119,5 +272,22 @@ class FairscapeConfig implements ConfigScope {
         license = opts.license
         organization = opts.organization
         metadata = opts.metadata as Map ?: [:]
+        datasheet = opts.datasheet != null ? opts.datasheet as boolean : true
+        evidenceGraph = opts.evidenceGraph != null ? opts.evidenceGraph as boolean : true
+        published = opts.published as boolean
+        linkInverses = opts.linkInverses != null ? opts.linkInverses as boolean : true
+        linkml = opts.linkml != null ? opts.linkml as boolean : true
+        expandDirectories = opts.expandDirectories as boolean
+        expandPatterns = opts.expandPatterns as List<String> ?: []
+        expandMaxFiles = opts.expandMaxFiles != null ? opts.expandMaxFiles as int : 1000
+        checksums = opts.checksums as boolean
+        contentSizes = opts.contentSizes as boolean
+        schemas = opts.schemas as boolean
+        schemaPatterns = opts.schemaPatterns as List<String> ?: ['**/*.csv', '**/*.tsv']
+        schemaSampleSize = opts.schemaSampleSize != null ? opts.schemaSampleSize as int : 100
+        schemaArrayThreshold = opts.schemaArrayThreshold != null ? opts.schemaArrayThreshold as int : 0
+        schemaMaxFiles = opts.schemaMaxFiles != null ? opts.schemaMaxFiles as int : 500
+        containerProvenance = opts.containerProvenance as boolean
+        containerEngineCommand = opts.containerEngineCommand
     }
 }

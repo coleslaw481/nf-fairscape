@@ -45,6 +45,25 @@ fairscape {
 
 You do not need to modify your pipeline script. When the run completes successfully, the plugin writes the EVI RO-Crate metadata file. The crate directory is the parent directory of `file` — set it inside your workflow `outputDir` so published outputs get crate-relative `contentUrl`s.
 
+Alongside the crate it also writes the artifacts you would otherwise get from `fairscape build` — an interactive provenance graph and an HTML datasheet:
+
+```
+results/
+  ro-crate-metadata.json     # the crate
+  provenance-graph.json      # evidence graph rooted at the crate
+  provenance-graph.html      # interactive, self-contained viewer
+  ro-crate-datasheet.html    # the datasheet
+  ai_ready_score.json        # AI-Readiness rubric behind the datasheet
+  ro-crate-linkml.yaml       # the crate root as a D4D (Datasheets for Datasets) document
+```
+
+and completes the crate's `owl:inverseOf` pairs, so each Computation's `generated` lists
+every file that names it in `generatedBy` — including the files inside a published
+directory, which the renderer links in one direction only.
+
+Set `datasheet`, `evidenceGraph`, `linkml` or `linkInverses` to `false` to skip any of
+them. See [docs/DATASHEET.md](docs/DATASHEET.md).
+
 Every configuration option has a fallback (workflow manifest, then a generated value), so the crate is valid even with no `fairscape` block at all.
 
 For a minimal end-to-end demo, see [examples/reverse-list](examples/reverse-list); for a multi-step provenance chain with saved intermediates, see [examples/letters-chain](examples/letters-chain). New to Groovy/Nextflow plugins? Read [docs/WALKTHROUGH.md](docs/WALKTHROUGH.md) for a guided tour of the codebase.
@@ -64,8 +83,47 @@ For a minimal end-to-end demo, see [examples/reverse-list](examples/reverse-list
 | `license` | manifest license → Apache-2.0 URI | License URL (use an [SPDX](https://spdx.org/licenses/) URI). |
 | `organization` | none | Optional publisher organization name. |
 | `metadata` | `[:]` | Map of extra fields merged into the root crate entity (e.g. `associatedPublication`, `funder`, `principalInvestigator`). See [Annotating tools and metadata](#annotating-tools-and-metadata). |
+| `datasheet` | `true` | Render `ro-crate-datasheet.html` and `ai_ready_score.json` after the run. |
+| `evidenceGraph` | `true` | Build `provenance-graph.json`/`.html` and record `EVI:inputs`/`EVI:outputs` on the crate root. |
+| `linkInverses` | `true` | Complete every `owl:inverseOf` pair EVI declares, so a relationship stated once appears on both entities. |
+| `linkml` | `true` | Write `ro-crate-linkml.yaml`, the crate root translated into a D4D document. |
+| `published` | `false` | Render the datasheet as a published release (identifiers become resolver links). |
+| `expandDirectories` | `false` | Describe the files *inside* a published directory as Datasets of their own. |
+| `expandPatterns` | `[]` (all files) | Glob patterns limiting which files inside a published directory are expanded. |
+| `expandMaxFiles` | `1000` | Cap on files expanded per published directory; the overflow is dropped with a warning. |
+| `checksums` | `false` | Record an `md5` on every Dataset that resolves to a readable local file. |
+| `contentSizes` | `false` | Also measure directories: recursive `contentSize` per directory Dataset, plus the crate total on the root. Regular files are always sized. |
+| `schemas` | `false` | Infer an `EVI:Schema` per described csv/tsv and link it via `evi:schema`. |
+| `schemaPatterns` | `['**/*.csv', '**/*.tsv']` | Glob patterns selecting which described files get a schema. |
+| `schemaSampleSize` | `100` | Data rows read when inferring a schema (the frictionless default). |
+| `schemaArrayThreshold` | `0` (off) | Collapse a trailing run of ≥ N same-typed columns into one spanning-array property. |
+| `schemaMaxFiles` | `500` | Cap on schemas inferred per run; the overflow is skipped with a warning. |
 
 Note: Nextflow rejects an *empty* `fairscape { }` block ("Unknown config attribute") — either set at least one option or omit the block entirely.
+
+### Describing directory outputs
+
+A process whose output is a whole directory (`output: path 'results'`) contributes exactly **one** Dataset — with no size, format, checksum or schema, because a directory has none. `expandDirectories = true` walks each published directory and gives every file inside it its own Dataset, `generatedBy` the task that produced the directory and `isPartOf` the directory's Dataset:
+
+```groovy
+fairscape {
+    expandDirectories = true
+    expandPatterns    = ['**/*.tsv', '**/*.csv', '**/*.json']   // omit to describe every file
+    checksums         = true
+    contentSizes      = true
+    schemas           = true
+}
+```
+
+**All of these are off by default and the crate is unchanged without them.** They
+each cost extra I/O — a directory walk, a full read per file for `md5`, a parse per
+tabular file — which is cheap on a local filesystem and much less so when the crate
+directory lives in an object store. Turn on what you want; a run with no `fairscape`
+block at all still produces the same valid crate it always did.
+
+### Inferred schemas
+
+`schemas = true` runs a Groovy port of `fairscape-cli schema infer` over every described csv/tsv: frictionless's candidate-type detection (integer/number/boolean/date/…, `source-type` kept when the canonical mapping is lossy) producing the same schema document the CLI writes, as an `EVI:Schema` node in the crate graph. Wide tables — a 1024-dimension embedding, say — collapse into a single spanning-array property with `schemaArrayThreshold`, the shape the hand-written CM4AI embedding schemas use.
 
 ## Annotating tools and metadata
 
@@ -89,6 +147,9 @@ All entities are minted deterministic [ARK](https://arks.org/) identifiers of th
 ```bash
 make verify
 ```
+
+`tools/parity.sh <crate dir>` diffs the datasheet and provenance graph against
+the Python `fairscape-cli` output — see [docs/DATASHEET.md](docs/DATASHEET.md#parity-with-the-cli).
 
 ## Differences from nf-prov
 

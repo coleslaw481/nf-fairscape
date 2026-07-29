@@ -15,3 +15,15 @@ nextflowPlugin {
         'nextflow.prov.ProvObserverFactory'
     ]
 }
+
+// `tools/parity.sh` drives CrateArtifactsTest against a prepared crate directory
+// to diff the datasheet/evidence-graph output against fairscape-cli's. Forward
+// its properties into the test JVM and always re-run when it is in play.
+tasks.withType(Test).configureEach {
+    final parityDir = System.getProperty('parityDir')
+    if( parityDir ) {
+        systemProperty 'parityDir', parityDir
+        systemProperty 'parityStep', System.getProperty('parityStep', 'all')
+        outputs.upToDateWhen { false }
+    }
+}

@@ -8,3 +8,6 @@ gradle.properties
 build
 work
 results
+
+# VSCode/Eclipse Java extension output (mirrors src/ as stale copies)
+bin/

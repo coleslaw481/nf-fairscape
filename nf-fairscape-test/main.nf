@@ -53,6 +53,27 @@ process WC_SAMPLE {
     """
 }
 
+// Publishes a DIRECTORY rather than a file, so the crate exercises
+// `fairscape.expandDirectories` (the files inside become Datasets of their own)
+// and `fairscape.schemas` (summary.tsv gets an inferred EVI:Schema).
+process TABULATE {
+    publishDir "${params.outdir}/table", mode: 'copy'
+
+    input:
+    tuple val(id), path(counts)
+
+    output:
+    path 'summary'
+
+    script:
+    """
+    mkdir summary
+    printf 'sample\\tlines\\tflagged\\n' > summary/summary.tsv
+    printf '%s\\t%s\\ttrue\\n' '${id}' "\$(head -1 ${counts} | awk '{print \$1}')" >> summary/summary.tsv
+    echo 'counts summarized by TABULATE' > summary/README.txt
+    """
+}
+
 workflow {
     main:
     prefixes_ch = channel.of('r1', 'r2', 'r3')
@@ -63,6 +84,7 @@ workflow {
 
     samples_ch = channel.fromPath(params.input).splitCsv(header: true)
     counts_ch = WC_SAMPLE(samples_ch)
+    TABULATE(counts_ch)
 
     publish:
     script = ECHO_SCRIPT.out

@@ -17,10 +17,13 @@
 
 package nextflow.prov.renderers
 
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.PathMatcher
 import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
+import java.util.stream.Stream
 
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
@@ -30,6 +33,9 @@ import nextflow.processor.TaskProcessor
 import nextflow.processor.TaskRun
 import nextflow.prov.FairscapeConfig
 import nextflow.prov.Renderer
+import nextflow.prov.datasheet.CrateJson
+import nextflow.prov.schema.TabularSchemaInferrer
+import nextflow.prov.util.ContainerInspector
 import nextflow.prov.util.ProvHelper
 import nextflow.script.ScriptMeta
 import nextflow.util.Duration
@@ -53,6 +59,8 @@ class FairscapeRenderer implements Renderer {
     private static final String EVI_DATASET = 'https://w3id.org/EVI#Dataset'
     private static final String EVI_SOFTWARE = 'https://w3id.org/EVI#Software'
     private static final String EVI_ROCRATE = 'https://w3id.org/EVI#ROCrate'
+    private static final String EVI_SCHEMA = 'EVI:Schema'
+    private static final String EVI_CONTAINER = 'https://w3id.org/EVI#Container'
 
     private static final Map EVI_CONTEXT = [
         '@vocab': 'https://schema.org/',
@@ -80,6 +88,9 @@ class FairscapeRenderer implements Renderer {
 
     // one Dataset ARK per physical file; published targets alias their work-dir source
     private Map<Path,String> fileArks = [:]
+
+    // files discovered inside a published directory -> that directory's published path
+    private Map<Path,Path> expandedParents = [:]
 
     FairscapeRenderer(FairscapeConfig config) {
         this.config = config
@@ -138,6 +149,43 @@ class FairscapeRenderer implements Renderer {
                 fileArk(value)
         }
 
+        // -- when asked, resolve each distinct container image to the identity of
+        //    the bits behind the tag (once per image, not once per task)
+        final containers = containerIdentities(session, tasks)
+
+        // -- one EVI Container entity per distinct image (fairscape_models
+        //    container.py); task Computations reference it via `usedContainer`.
+        //    Additive: the flat containerImage/containerDigest keys on the
+        //    Computations and process Software stay for compatibility. The ARK
+        //    hashes the digest when known so the identifier names the bits, not
+        //    the tag; a digestless (local-only) image falls back to the reference.
+        final containerArks = [:] as Map<String,String>
+        final containerEntities = containers.values().collect { Map container ->
+            final image = container.get('image') as String
+            final ark = mintArk(naan, 'container', image, (container.get('repoDigest') ?: image) as String)
+            containerArks[image] = ark
+            return withoutNulls([
+                '@id'        : ark,
+                '@type'      : ['prov:Entity', EVI_CONTAINER],
+                'name'       : image,
+                'author'     : author,
+                'description': "Container image '${image}' used by the Nextflow workflow run '${runName}'" as String,
+                'keywords'   : keywords,
+                'containerImage'  : image,
+                'containerDigest' : container.get('repoDigest'),
+                'containerImageId': container.get('imageId')
+            ])
+        }
+
+        // -- a process that publishes a whole directory contributes one opaque
+        //    Dataset; optionally describe the files inside it as their own
+        //    Datasets, each part of (and generated with) the directory
+        final publishedDirArks = [:] as Map<Path,String>
+        for( final entry : publishedFiles )
+            publishedDirArks[entry.value] = fileArks[entry.key ?: entry.value]
+        if( config.expandDirectories )
+            expandPublishedDirectories(publishedFiles.values() as Set<Path>)
+
         // -- software entities
         final workflowSoftware = withoutNulls([
             '@id'        : workflowArk,
@@ -188,6 +236,12 @@ class FairscapeRenderer implements Renderer {
                 ?.replaceAll(/^\s*("""|''')|("""|''')\s*$/, '')
                 ?.stripIndent()
 
+            // the image this process's tasks ran in. `contentUrl` points at the
+            // tool's source repository, which says what the software IS but not
+            // what was executed; the container is the built artifact, so it
+            // belongs on the Software entity and not only on each Computation.
+            final container = containers[processContainer(processor, tasks)] ?: [:]
+
             return withoutNulls([
                 '@id'        : ark,
                 '@type'      : ['prov:Entity', EVI_SOFTWARE],
@@ -199,7 +253,11 @@ class FairscapeRenderer implements Renderer {
                 'version'    : userMeta.get('softwareVersion') ?: manifest.version ?: metadata.commitId,
                 'contentUrl' : userMeta.get('softwareUrl') ?: scriptUrl,
                 'keywords'   : userMeta.containsKey('softwareKeywords') ? asStringList(userMeta.get('softwareKeywords')) : keywords,
-                'isPartOf'   : [ ['@id': workflowArk] ]
+                'isPartOf'   : [ ['@id': workflowArk] ],
+                // runtime details beyond the EVI model, preserved as extra keys
+                'containerImage' : container.get('image'),
+                'containerDigest': container.get('repoDigest'),
+                'containerImageId': container.get('imageId')
             ])
         }
 
@@ -225,8 +283,11 @@ class FairscapeRenderer implements Renderer {
                 'usedDataset' : usedDataset,
                 'generated'   : generated,
                 'isPartOf'    : [ ['@id': runArk] ],
+                'usedContainer': containerArks.containsKey(task.container as String)
+                    ? [ ['@id': containerArks[task.container as String]] ] : null,
                 // runtime details beyond the EVI model, preserved as extra keys
                 'containerImage': task.container,
+                'containerDigest': (containers[task.container as String] ?: [:]).get('repoDigest'),
                 'identifier'  : task.hash.toString()
             ])
         }
@@ -260,28 +321,65 @@ class FairscapeRenderer implements Renderer {
         final producerByArk = [:] as Map<String,String>
         taskLookup.each { source, task -> producerByArk[fileArks[source]] = taskArks[task] }
 
+        // first path registered for each ARK (published targets alias their work-dir source)
+        final pathByArk = [:] as Map<String,Path>
+        fileArks.each { path, ark -> pathByArk.putIfAbsent(ark, path) }
+
+        // an expanded file inherits the producer of the directory it was found in
+        final partOfByArk = [:] as Map<String,String>
+        expandedParents.each { file, dir ->
+            final parentArk = publishedDirArks[dir]
+            partOfByArk[fileArks[file]] = parentArk
+            if( producerByArk[parentArk] )
+                producerByArk[fileArks[file]] = producerByArk[parentArk]
+        }
+
+        final schemas = [] as List<Map>
+        final schemaMatchers = globMatchers(config.schemaPatterns)
+        int schemasSkipped = 0
+
         final datasets = fileArks.values().unique(false).collect { ark ->
-            final source = fileArks.find { p, a -> a == ark }.key
+            final source = pathByArk[ark]
             final target = publishedByArk[ark] ?: source
             final producer = producerByArk[ark]
+            final partOf = partOfByArk[ark]
+
+            String schemaArk = null
+            if( config.schemas && TabularSchemaInferrer.supports(target) && matchesAny(schemaMatchers, target) ) {
+                if( schemas.size() >= config.schemaMaxFiles )
+                    schemasSkipped++
+                else {
+                    final schema = inferSchema(target, ark, runName)
+                    if( schema != null ) {
+                        schemas << schema
+                        schemaArk = schema['@id'] as String
+                    }
+                }
+            }
 
             return withoutNulls([
                 '@id'          : ark,
                 '@type'        : ['prov:Entity', EVI_DATASET],
                 'name'         : target.name,
                 'author'       : author,
-                'description'  : "File '${target.name}' ${producer ? 'produced' : 'used'} by the Nextflow workflow run '${runName}'" as String,
+                'description'  : "${Files.isDirectory(target) ? 'Directory' : 'File'} '${target.name}' ${producer ? 'produced' : 'used'} by the Nextflow workflow run '${runName}'" as String,
                 'datePublished': dateCompleted,
                 'keywords'     : keywords,
                 'format'       : getFileFormat(target),
                 'generatedBy'  : producer ? [ ['@id': producer] ] : [],
+                'isPartOf'     : partOf ? [ ['@id': partOf] ] : null,
+                'evi:schema'   : schemaArk ? ['@id': schemaArk] : null,
                 'contentUrl'   : target.startsWith(crateDir) ? crateDir.relativize(target).toString() : normalizePath(target),
-                'contentSize'  : getFileSize(target)
+                'contentSize'  : getContentSize(target, config.contentSizes),
+                'md5'          : config.checksums ? md5Hex(target) : null
             ])
         }
 
+        if( schemasSkipped > 0 )
+            log.warn("nf-fairscape: schema inference capped at ${config.schemaMaxFiles} files (fairscape.schemaMaxFiles); ${schemasSkipped} eligible file(s) have no schema" as String)
+
         // -- root dataset and metadata descriptor
-        final hasPart = ([runArk] + taskArks.values() + [workflowArk, engineArk] + processArks.values() + fileArks.values().unique(false))
+        final hasPart = ([runArk] + taskArks.values() + [workflowArk, engineArk] + processArks.values() + containerArks.values() + fileArks.values().unique(false) + schemas.collect { it['@id'] as String })
             .collect { id -> ['@id': id] }
 
         final Map root = withoutNulls([
@@ -296,6 +394,7 @@ class FairscapeRenderer implements Renderer {
             'license'      : license,
             'datePublished': dateCompleted,
             'publisher'    : config.organization,
+            'contentSize'  : config.contentSizes ? crateContentSize(crateDir) : null,
             'hasPart'      : hasPart
         ])
 
@@ -313,7 +412,7 @@ class FairscapeRenderer implements Renderer {
 
         final crate = [
             '@context': EVI_CONTEXT,
-            '@graph'  : [descriptor, root, runComputation] + taskComputations + [workflowSoftware, engineSoftware] + processSoftware + datasets
+            '@graph'  : [descriptor, root, runComputation] + taskComputations + [workflowSoftware, engineSoftware] + processSoftware + containerEntities + datasets + schemas
         ]
 
         // render crate to JSON and write to file
@@ -380,6 +479,48 @@ class FairscapeRenderer implements Renderer {
     static final List<String> PROTECTED_ROOT_KEYS = [
         '@id', '@type', 'conformsTo', 'hasPart'
     ].asImmutable() as List<String>
+
+    /**
+     * The container image every task of a process ran in, or null when the
+     * process ran natively or its tasks disagree. Tasks of one process normally
+     * share an image; if a dynamic `container` directive gave them different
+     * ones there is no single image to put on the process Software entity, and
+     * the per-task Computations already carry the truth, so return nothing
+     * rather than pick one arbitrarily.
+     */
+    static String processContainer(TaskProcessor processor, Set<TaskRun> tasks) {
+        final images = tasks.findAll { it.processor == processor }
+            .collect { it.container as String }
+            .findAll { it }
+            .unique(false)
+        return images.size() == 1 ? images[0] : null
+    }
+
+    /**
+     * Map of image reference -> `[image:, repoDigest:, imageId:]` for every
+     * distinct container used by the run. Empty unless
+     * `fairscape.containerProvenance` is on; empty too when no container engine
+     * is enabled or the engine cannot answer, since every field it feeds is
+     * dropped by withoutNulls and the crate falls back to what it always had.
+     */
+    private Map<String,Map> containerIdentities(Session session, Set<TaskRun> tasks) {
+        if( !config.containerProvenance )
+            return [:]
+        final engine = config.containerEngineCommand ?: ContainerInspector.engineFor(session.config)
+        if( !engine ) {
+            log.warn('nf-fairscape: fairscape.containerProvenance is enabled but no container engine is enabled; set fairscape.containerEngineCommand to resolve image digests')
+            return [:]
+        }
+        final inspector = new ContainerInspector(engine)
+        final result = [:] as Map<String,Map>
+        for( final image : tasks.collect { it.container as String }.findAll { it }.unique(false) ) {
+            final identity = inspector.inspect(image)
+            result[image] = ([image: image] + identity) as Map
+            if( !identity.get('repoDigest') )
+                log.debug("nf-fairscape: '${image}' has no registry digest (built locally and never pushed?); recording its image id only" as String)
+        }
+        return result
+    }
 
     /**
      * Extract the user-supplied software metadata from a process `ext` directive
@@ -474,13 +615,183 @@ class FairscapeRenderer implements Renderer {
         return String.valueOf(value)
     }
 
+    // ------------------------------------------------------------------
+    // Published-directory expansion
+    // ------------------------------------------------------------------
+
+    /**
+     * Register the files inside each published directory so they become Dataset
+     * entities of their own. Without this a process whose output is a directory
+     * contributes a single Dataset with no size, format, checksum or schema —
+     * every file it actually produced stays invisible to the crate.
+     *
+     * @param targets the published paths, of which the directories are expanded
+     */
+    protected void expandPublishedDirectories(Set<Path> targets) {
+        final matchers = globMatchers(config.expandPatterns)
+        for( final target : targets ) {
+            if( target == null || !Files.isDirectory(target) )
+                continue
+            List<Path> files
+            try {
+                files = walkFiles(target, matchers)
+            }
+            catch( Exception e ) {
+                log.warn("nf-fairscape: unable to list '${target}' for expansion -- describing it as a single Dataset" as String)
+                log.debug("Error expanding published directory ${target}", e)
+                continue
+            }
+            if( files.size() > config.expandMaxFiles ) {
+                log.warn("nf-fairscape: '${target}' holds ${files.size()} matching files, more than fairscape.expandMaxFiles=${config.expandMaxFiles}; describing the first ${config.expandMaxFiles} and omitting ${files.size() - config.expandMaxFiles}" as String)
+                files = files.subList(0, config.expandMaxFiles)
+            }
+            for( final file : files ) {
+                fileArk(file)
+                expandedParents[file] = target
+            }
+        }
+    }
+
+    /** Regular files under a directory, sorted so ARKs come out in a stable order. */
+    private static List<Path> walkFiles(Path dir, List<PathMatcher> matchers) {
+        final List<Path> found = []
+        final Stream<Path> stream = Files.walk(dir)
+        try {
+            for( final Iterator<Path> it = stream.iterator(); it.hasNext(); ) {
+                final Path path = it.next()
+                if( Files.isRegularFile(path) && matchesAny(matchers, path) )
+                    found.add(path)
+            }
+        }
+        finally {
+            stream.close()
+        }
+        return found.sort { Path path -> path.toString() }
+    }
+
+    private static List<PathMatcher> globMatchers(List<String> patterns) {
+        return (patterns ?: []).collect { pattern ->
+            FileSystems.getDefault().getPathMatcher("glob:${pattern}" as String)
+        }
+    }
+
+    /** An empty matcher list means "no filter", matching every path. */
+    private static boolean matchesAny(List<PathMatcher> matchers, Path path) {
+        return matchers.isEmpty() || matchers.any { matcher -> matcher.matches(path) }
+    }
+
+    // ------------------------------------------------------------------
+    // Schema inference
+    // ------------------------------------------------------------------
+
+    /**
+     * Infer an EVI:Schema for a tabular file, the Groovy equivalent of
+     * `fairscape-cli schema infer`. Returns null (with a warning) when the file
+     * cannot be described, since a missing schema must never fail a run.
+     *
+     * @param target      the file to describe
+     * @param datasetArk  the ARK of the Dataset the schema belongs to
+     * @param runName     used in the schema description
+     */
+    protected Map inferSchema(Path target, String datasetArk, String runName) {
+        try {
+            final schemaArk = mintArk(naan, 'schema', target.name, datasetArk)
+            return TabularSchemaInferrer.infer(
+                target,
+                schemaArk,
+                target.name,
+                "Inferred schema for '${target.name}' from the Nextflow workflow run '${runName}'" as String,
+                config.schemaSampleSize,
+                config.schemaArrayThreshold)
+        }
+        catch( Exception e ) {
+            log.warn("nf-fairscape: could not infer a schema for '${target.name}' -- describing the file without one" as String)
+            log.debug("Error inferring schema for ${target}", e)
+            return null
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // File description
+    // ------------------------------------------------------------------
+
     private static String getFileFormat(Path target) {
         return ProvHelper.getEncodingFormat(target) ?: target.getExtension() ?: 'unknown'
     }
 
-    private static String getFileSize(Path target) {
+    /**
+     * Byte count of a file, or — only when the caller opted into directory
+     * measurement — the recursive byte count of a directory. A directory has no
+     * size of its own, so measuring one means walking it, which is why it is
+     * opt-in: on a crate published to an object store that walk is LIST/HEAD
+     * traffic the user never asked for.
+     */
+    private static String getContentSize(Path target, boolean measureDirectories) {
         try {
-            return Files.isRegularFile(target) ? Files.size(target).toString() : null
+            if( Files.isRegularFile(target) )
+                return Files.size(target).toString()
+            if( measureDirectories && Files.isDirectory(target) )
+                return String.valueOf(treeSize(target))
+            return null
+        }
+        catch( Exception e ) {
+            return null
+        }
+    }
+
+    /**
+     * The crate's total payload as a human-readable string. Without it the
+     * AI-Ready scorer falls back to summing the Dataset `contentSize` values,
+     * which counts a directory and the files inside it twice.
+     */
+    private static String crateContentSize(Path crateDir) {
+        try {
+            return Files.isDirectory(crateDir) ? CrateJson.formatSize(treeSize(crateDir)) : null
+        }
+        catch( Exception e ) {
+            return null
+        }
+    }
+
+    private static long treeSize(Path dir) {
+        long total = 0
+        final Stream<Path> stream = Files.walk(dir)
+        try {
+            for( final Iterator<Path> it = stream.iterator(); it.hasNext(); ) {
+                final Path path = it.next()
+                if( !Files.isRegularFile(path) )
+                    continue
+                try {
+                    total += Files.size(path)
+                }
+                catch( Exception e ) {
+                    // an unreadable file contributes nothing to the total
+                }
+            }
+        }
+        finally {
+            stream.close()
+        }
+        return total
+    }
+
+    /** MD5 of a regular file, streamed; null for directories and unreadable paths. */
+    private static String md5Hex(Path target) {
+        try {
+            if( !Files.isRegularFile(target) )
+                return null
+            final digest = MessageDigest.getInstance('MD5')
+            final byte[] buffer = new byte[1 << 16]
+            final InputStream stream = Files.newInputStream(target)
+            try {
+                int read
+                while( (read = stream.read(buffer)) != -1 )
+                    digest.update(buffer, 0, read)
+            }
+            finally {
+                stream.close()
+            }
+            return digest.digest().encodeHex().toString()
         }
         catch( Exception e ) {
             return null
