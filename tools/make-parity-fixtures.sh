@@ -51,7 +51,11 @@ EOF
   [ -f "$run/results/ro-crate-metadata.json" ] || { echo "no crate published for $name"; exit 1; }
   rm -rf "${DEST:?}/$name"
   mkdir -p "$DEST/$name"
-  cp -r "$run/results"/. "$DEST/$name/"
+  # -L, not -r alone: publishDir's default mode is `symlink`, so results/ is full
+  # of links into $SCRATCH/work. Committing those gives CI a tree of dangling
+  # links and Gradle's processTestResources fails ("Couldn't follow symbolic
+  # link") before a single test runs. Copy the bytes.
+  cp -rL "$run/results"/. "$DEST/$name/"
   # `paramInputs` records a file-shaped parameter by its absolute path, which
   # here is this script's scratch directory. Both implementations read the same
   # frozen crate so parity is unaffected, but a committed fixture should not
