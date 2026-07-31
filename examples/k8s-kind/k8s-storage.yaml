@@ -1,0 +1,19 @@
+# hostPath PV over the example directory (mounted into the node by
+# kind-cluster.yaml). ReadWriteMany is fine here: kind is a single node.
+apiVersion: v1
+kind: PersistentVolume
+metadata: { name: nf-share-pv }
+spec:
+  capacity: { storage: 5Gi }
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  hostPath: { path: /home/oj/fairscape/NewMoniWork/nf/nf-fairscape/examples/k8s-kind, type: Directory }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: nf-share, namespace: default }
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: nf-share-pv
+  resources: { requests: { storage: 5Gi } }

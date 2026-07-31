@@ -1,368 +1,378 @@
 # FAIRSCAPE EVI RO-Crate format
 
-`nf-fairscape` writes one `ro-crate-metadata.json` per run. The `@context` is the
-FAIRSCAPE default context: [schema.org](https://schema.org/) as `@vocab`, plus the
-[EVI](https://w3id.org/EVI#) and [W3C PROV-O](http://www.w3.org/ns/prov#) namespaces and
-`@id`-typed EVI terms (`usedSoftware`, `usedDataset`, `generated`, `generatedBy`).
+What ends up in the crate, and why. For the options that control it, see
+[CONFIGURATION.md](CONFIGURATION.md).
+
+The `@context` is FAIRSCAPE's default: [schema.org](https://schema.org/) as `@vocab`, plus
+[EVI](https://w3id.org/EVI#), [PROV-O](http://www.w3.org/ns/prov#) and
+[Croissant RAI](http://mlcommons.org/croissant/RAI/1.0) prefixes, and `@id`-typed EVI terms
+(`usedSoftware`, `usedDataset`, `generated`, `generatedBy`).
 
 ## Graph structure
 
-| Node | `@type` | Source in Nextflow |
-| ---- | ------- | ------------------ |
-| `ro-crate-metadata.json` descriptor | `CreativeWork` | `conformsTo` [RO-Crate 1.2](https://w3id.org/ro/crate/1.2), `about` → root |
-| Root crate | `["Dataset", "EVI#ROCrate"]` | `conformsTo` [FAIRSCAPE profile 0.1](https://w3id.org/fairscape/profile/0.1); name/description/version from workflow manifest, `hasPart` lists every node below |
-| Run Computation | `["prov:Activity", "EVI#Computation"]` | The whole run: `command` = launch command line, `parameter` = folded params, `usedSoftware` = workflow script + Nextflow engine, `usedDataset` = external workflow inputs, `generated` = published/declared outputs. Extra keys: `startTime`, `endTime`, `nextflowVersion`, `identifier` (session id) |
-| Task Computations | `["prov:Activity", "EVI#Computation"]` | One per successful task: `command` = task script, `usedSoftware` = its process Software, `usedDataset` = task input files, `generated` = task output files, `isPartOf` → run Computation. Extra keys: `containerImage`, `identifier` (task hash), and `containerDigest` when `containerProvenance` is on |
-| Workflow Software | `["prov:Entity", "EVI#Software"]` | The main workflow script (`contentUrl` = repository or normalized path); referenced only by the run Computation |
-| Nextflow Software | `["prov:Entity", "EVI#Software"]` | The engine itself, versioned; referenced only by the run Computation |
-| Process Software | `["prov:Entity", "EVI#Software"]` | One per process (e.g. `REVERSE`): `description` = the process body source as written in the workflow (unresolved variables — the template; the resolved command lives on each Computation), `contentUrl` = the script/module file defining it, `isPartOf` → workflow Software. Each task Computation's `usedSoftware` points here. All fields can be overridden per process via `ext fairscape: [...]` (see below). With `containerProvenance` on, gains `containerImage`/`containerDigest`/`containerImageId` — the built artifact this software was executed from (see [Container provenance](#container-provenance)) |
-| Datasets | `["prov:Entity", "EVI#Dataset"]` | One per unique file (workflow inputs, task outputs, published files): `format` = MIME type or extension, `generatedBy` → producing Computation (inverse of `generated`), `contentUrl` = crate-relative path for published files, normalized path/URL otherwise, `contentSize` in bytes. Opt-in extras: `md5` (`checksums`), recursive `contentSize` for directories (`contentSizes`), `isPartOf` → containing directory for expanded files (`expandDirectories`), `evi:schema` → its inferred Schema (`schemas`) |
-| Schemas | `EVI:Schema` | One per described csv/tsv when `schemas` is on: the `fairscape-cli schema infer` document, referenced from its Dataset by `evi:schema` (see [Inferred schemas](#inferred-schemas)) |
+| Node | `@type` | Content |
+| ---- | ------- | ------- |
+| Descriptor | `CreativeWork` | `conformsTo` [RO-Crate 1.2](https://w3id.org/ro/crate/1.2), `about` → root |
+| Root crate | `["Dataset", "EVI#ROCrate"]` | `conformsTo` [FAIRSCAPE profile 0.1](https://w3id.org/fairscape/profile/0.1); name/description/version from the manifest; `hasPart` lists everything below |
+| Run Computation | `["prov:Activity", "EVI#Computation"]` | the whole run: `command` = launch line, `parameter` = folded params, `usedSoftware` = script + engine, `usedDataset` = external inputs, `generated` = published outputs. Extras: `startTime`, `endTime`, `nextflowVersion`, `identifier` (session id) |
+| Task Computation | `["prov:Activity", "EVI#Computation"]` | one per successful task: `command` = task script, `usedSoftware` → its process, `usedDataset`/`generated` = its files, `isPartOf` → run. Extras: `containerImage`, `identifier` (task hash), `containerDigest` with `containerProvenance` |
+| Workflow Software | `["prov:Entity", "EVI#Software"]` | the main script; referenced only by the run Computation |
+| Nextflow Software | `["prov:Entity", "EVI#Software"]` | the engine, versioned |
+| Process Software | `["prov:Entity", "EVI#Software"]` | one per process: `description` = the process body as written (the template — the resolved command lives on each Computation), `contentUrl` = its defining file (the copy in `workflow/` when the crate carries it, else a commit-pinned module URL), `isPartOf` → workflow Software. Overridable via [`ext fairscape`](#user-supplied-metadata) |
+| Dataset | `["prov:Entity", "EVI#Dataset"]` | one per unique file: `format`, `contentSize`, `generatedBy` → producer, `contentUrl` = crate-relative when published. Opt-in: `md5`, directory sizes, `isPartOf`, `evi:schema` |
+| Schema | `EVI:Schema` | one per csv/tsv with `schemas` on |
+| Container | `["prov:Entity", "EVI#Container"]` | one per image with `containerProvenance` on |
+
+Dataflow between steps emerges from shared Dataset ARKs — a task consuming another's output
+references the same entity. WRROC's prospective layer (`FormalParameter`, `HowToStep`,
+`ControlAction`) has no EVI equivalent and is not modeled.
 
 ## Inverse relationships
 
-Unless `fairscape.linkInverses = false`, the crate is completed against the
-`owl:inverseOf` pairs the EVI ontology declares — the Groovy equivalent of
-`fairscape augment link-inverses`. A relationship stated once is then present on both
-entities:
+Unless `linkInverses = false`, the crate is completed against the `owl:inverseOf` pairs EVI
+declares, so a relationship stated once appears on both entities:
 
-| Stated by the renderer | Entailed by the linker |
-| ---------------------- | ---------------------- |
+| Stated by the renderer | Entailed |
+| ---------------------- | -------- |
 | `Dataset.generatedBy` → Computation | `Computation.generated` → Dataset |
 | `Computation.usedDataset` → Dataset | `Dataset.datasetUsedBy` → Computation |
 | `Computation.usedSoftware` → Software | `Software.softwareUsedBy` → Computation |
 
-This is what fills `generated` for the files found inside a published directory: the
-renderer links them only in the `generatedBy` direction (the directory already stands for
-them in `generated`), and the entailment supplies the other half. On the Cell Maps
-pipeline it takes `HIERARCHY.generated` from 1 entry to 24.
+This is what fills `generated` for files found inside a published directory — the renderer
+links those one way only. On the Cell Maps pipeline it takes `HIERARCHY.generated` from 1
+entry to 24.
 
-The full table is the 18 pairs in `InverseLinker.INVERSE_PAIRS`, carried as data rather
-than re-derived with rdflib and a SPARQL query at runtime — the ontology is a fixed,
-versioned artifact, so the answer is fixed too. Pairs are applied in ascending order of
-the first property and entities in `@graph` order, which makes the augmented crate
-byte-stable across runs; the CLI's order comes from rdflib's result set, which is not.
+All 18 pairs live in `InverseLinker.INVERSE_PAIRS`, carried as data rather than re-derived
+with rdflib at runtime: the ontology is versioned, so the answer is fixed. Pairs apply in
+sorted order, which makes the augmented crate byte-stable; the CLI's rdflib order is not.
 
-A Dataset published by the run picks up the run-level Computation in `generatedBy`
-alongside its task, because the run Computation lists published files in `generated`.
-That is the correct entailment of what the crate states, and matches the CLI exactly.
+Published datasets pick up the run-level Computation in `generatedBy` alongside their task,
+because the run lists them in `generated`. Correct entailment, and what the CLI does too.
 
 ## D4D / LinkML export
 
-Unless `fairscape.linkml = false`, the crate root is translated into a D4D (Datasheets
-for Datasets) document at `ro-crate-linkml.yaml` — the Groovy equivalent of
-`fairscape build linkml`. Despite the file name the LinkML artifact *is* the D4D
-translation: `ROCRATE_TO_D4D_MAPPING` re-expresses the root's schema.org and Croissant
-RAI properties in D4D's vocabulary (`rai:dataBiases` → `known_biases`,
-`rai:dataUseCases` → `purposes`/`tasks`/`intended_uses`, `prohibitedUses` →
-`discouraged_uses`/`prohibited_uses`, …). Only the root is read; D4D describes a dataset,
-not a provenance graph.
+Unless `linkml = false`, the crate root becomes a D4D (Datasheets for Datasets) document at
+`ro-crate-linkml.yaml`. Despite the filename, the LinkML artifact *is* the D4D translation:
+`ROCRATE_TO_D4D_MAPPING` re-expresses the root's schema.org and RAI properties in D4D's
+vocabulary (`rai:dataBiases` → `known_biases`, `rai:dataUseCases` → `purposes`/`tasks`,
+`prohibitedUses` → `discouraged_uses`, …). Root only — D4D describes a dataset, not a graph.
 
-`PyYaml` reproduces `yaml.dump`'s defaults — sorted keys, block style, folding at column
-80, plain scalars unless the content would be ambiguous — because the output is diffed
-against the CLI's byte for byte.
+`PyYaml` reproduces `yaml.dump`'s defaults exactly, because the output is diffed against the
+CLI byte for byte.
 
-One inherited quirk is worth knowing about: the D4D `bytes` field parses `contentSize`
-with **1024-based** suffixes while the datasheet formats it with **1000-based** ones, so a
-human-readable `contentSize` does not round-trip exactly (`945.6 MB` reads back as
-991,533,465). Reproduced rather than corrected — the point of the port is to agree with
-the CLI.
+One inherited quirk: D4D's `bytes` field parses `contentSize` with 1024-based suffixes while
+the datasheet formats it with 1000-based ones, so `945.6 MB` reads back as 991,533,465.
+Reproduced, not corrected — the port's job is to agree with the CLI.
 
 ## Opt-in enrichment
 
-Everything in this section is **off by default**, and a run that sets none of it emits the
-same crate the plugin has always emitted. Each option buys metadata with I/O the plugin
-would otherwise not perform, and that trade is the user's to make — a directory walk is
-free on a local disk and a pile of LIST/HEAD requests when the crate directory is an S3
-bucket.
-
-(The derived-artifact steps — `datasheet`, `evidenceGraph`, `linkInverses`, `linkml` — are
-a different category and default to *on*: they read the crate JSON and nothing else, so
-they cost no I/O over the data. `evidenceGraph` and `linkInverses` do rewrite the crate.)
+Off by default. A run that sets none of it emits the crate the plugin always emitted.
 
 | Option | Cost | Buys |
 | ------ | ---- | ---- |
 | `expandDirectories` | one walk per published directory | a Dataset per file inside it |
-| `checksums` | one full read per described file | `md5` (AI-Ready *verifiable*) |
-| `contentSizes` | one walk per directory + one over the crate directory | directory and crate-total `contentSize` (AI-Ready *statistics*) |
-| `schemas` | reads `schemaSampleSize` rows per csv/tsv | an `EVI:Schema` per table (AI-Ready *standards*) |
-| `containerProvenance` | one `image inspect` per distinct image | `containerDigest` on tasks, container fields on process Software |
+| `checksums` | one full read per file | `md5` (AI-Ready *verifiable*) |
+| `contentSizes` | one walk per directory + the crate | directory and crate-total `contentSize` (*statistics*) |
+| `schemas` | reads N rows per csv/tsv | an `EVI:Schema` per table (*standards*) |
+| `containerProvenance` | one `image inspect` per image | `containerDigest` on tasks, container fields on Software |
 
-With `contentSizes` the root carries `contentSize` — the crate directory's total payload,
-formatted the way the datasheet displays it. It is measured *before* the datasheet and
-evidence graph are written next to the crate, so those few hundred KB are not counted.
-Without it the AI-Ready scorer sums the per-entity `contentSize` values instead, which
-double counts an expanded directory and the files inside it.
+The derived artifacts (`datasheet`, `evidenceGraph`, `linkInverses`, `linkml`) are a
+different category and default to *on*: they read the crate JSON only. Two of them rewrite it.
 
-One unconditional change came with this work: a Dataset that is a directory is now
-described as `Directory 'x' produced by …` rather than `File 'x' produced by …`. It was
-simply wrong before, and it only affects free text.
+Two more default to *on* because what they replace is wrong rather than merely absent, and
+because their cost is bounded by the number of processes and parameters, not by the amount of
+data — the asymmetry the table above is guarding against:
 
-Dataflow between steps emerges from shared Dataset identifiers: a task consuming another
-task's output references the same `EVI:Dataset` ARK. Prospective-workflow entities
-(WRROC's `FormalParameter`, `HowToStep`, `ControlAction`, …) have no EVI equivalent and
-are intentionally not modeled.
+| Option | Cost | Buys |
+| ------ | ---- | ---- |
+| `toolVersions` | one small file read per run | the version of the tool a process ran, not the pipeline's |
+| `paramInputs` | one `exists` per file-shaped parameter | Datasets for inputs no task staged (the samplesheet) |
 
-Unless `fairscape.evidenceGraph = false`, the root additionally carries:
+`toolVersions` looks in both places a version can live: the `versions.yml` a task writes, and
+the run-wide file nf-core collates into `pipeline_info/` (the only record once a module reports
+through a `topic` channel with `eval`, which writes no per-task file). It is keyed by bare
+process name, then by qualified name. A process whose version reaches neither place keeps the
+manifest fallback — including MultiQC, whose own version cannot be in a file it is given as
+input. `ext.fairscape.softwareVersion` still wins over both.
+
+`paramInputs` takes a parameter to name a file when its value contains a `/` and its last
+segment has an extension, which excludes base directories and URL prefixes
+(`igenomes_base`, `custom_config_base`). Local paths must exist; a remote URI is recorded
+without being fetched.
+
+The root `contentSize` is measured before the datasheet and graph HTML land in the crate
+directory, so those aren't counted. Without it the AI-Ready scorer sums per-entity sizes,
+double-counting an expanded directory and its files.
+
+With `evidenceGraph` the root also carries:
 
 | Field | Meaning |
 | ----- | ------- |
 | `https://w3id.org/EVI#outputs` | Datasets no computation consumed — the run's terminal outputs |
-| `https://w3id.org/EVI#inputs` | Samples, consumed datasets nothing generated, and standalone datasets |
-| `localEvidenceGraph` | `{"@id": "provenance-graph.html"}`, the generated viewer |
+| `https://w3id.org/EVI#inputs` | samples, consumed datasets nothing generated, standalone datasets |
+| `localEvidenceGraph` | `{"@id": "provenance-graph.html"}` |
 
-These are derived from the graph exactly as `fairscape build subcrate` derives them, and
-they are what lets the evidence graph be rooted at the crate. See
-[DATASHEET.md](DATASHEET.md).
+Derived exactly as `fairscape build subcrate` derives them. See [DATASHEET.md](DATASHEET.md).
 
 ## Container provenance
 
-A task Computation always carries `containerImage` — whatever string the `container`
-directive resolved to. That is usually a tag, and a tag is a label, not an identity: the
-same `cm4ai/cellmaps_coembedding:1.5.0` can be re-pushed tomorrow over different bits and
-the two crates will look identical. `fairscape.containerProvenance = true` asks the
-container engine what the reference actually resolved to:
-
-```groovy
-fairscape {
-    containerProvenance = true
-    // containerEngineCommand = 'podman'   // default: whichever engine the run enabled
-}
-```
-
-Each distinct image is inspected once per run, and the crate gains:
+A task Computation always carries `containerImage` — whatever the `container` directive
+resolved to. That's usually a tag, and a tag is a label, not an identity:
+`cm4ai/cellmaps_coembedding:1.5.0` can be re-pushed tomorrow over different bits and two
+crates look identical. `containerProvenance = true` asks the engine what it really was:
 
 | Entity | Field | Value |
 | ------ | ----- | ----- |
-| Container (one per distinct image) | `containerImage` / `containerDigest` / `containerImageId` | the image's reference, content digest and local id |
-| Task Computation | `usedContainer` | reference to the Container entity for the image that task ran in |
-| Task Computation | `containerDigest` | `repo@sha256:…` for the image that task ran in |
-| Process Software | `containerImage` | the reference every task of that process used |
-| Process Software | `containerDigest` | its content digest |
-| Process Software | `containerImageId` | the engine's local image id |
+| Container (one per image) | `containerImage` / `containerDigest` / `containerImageId` | reference, content digest, local id |
+| Task Computation | `usedContainer` | reference to that Container |
+| Task Computation | `containerDigest` | `repo@sha256:…` |
+| Process Software | `containerImage` / `containerDigest` / `containerImageId` | the image every task of that process used |
 
-The Container entity is the typed home for this information: it is an EVI `Container`
-(`fairscape_models/container.py`, `@type` `['prov:Entity', 'https://w3id.org/EVI#Container']`),
-listed in the root `hasPart`, with an ARK minted from the content digest when one exists
-(so the identifier names the bits, not the tag) and from the reference otherwise. Task
-Computations point at it via `usedContainer`, which `fairscape_models` folds into
-`prov:used` alongside `usedSoftware`/`usedDataset`. The flat `container*` keys on the
-Computations and process Software are kept as well, so existing consumers keep working.
+The Container entity is an EVI `Container` (`fairscape_models/container.py`), listed in the
+root `hasPart`, with an ARK minted from the digest when there is one — so the identifier
+names the bits, not the tag. `fairscape_models` folds `usedContainer` into `prov:used`
+alongside `usedSoftware`/`usedDataset`. The flat `container*` keys stay for compatibility.
 
-Putting the image on the **process Software** is the point of the option. `contentUrl` on
-that entity names the tool's source repository, which says what the software *is*; the
-container is what was actually executed. Recording it beside the tool, rather than only on
-each activity, is the difference between "this crate names a GitHub URL" and "this crate
-names the artifact that produced these files".
+Putting the image on the **process Software** is the point. `contentUrl` there names the
+tool's source repo — what the software *is*. The container is what actually executed.
 
-A process whose tasks used different images (a dynamic `container` directive) gets no
-image on its Software entity — the per-task Computations already carry the truth, and
-picking one arbitrarily would be a claim the run does not support.
+A process whose tasks used different images (a dynamic `container` directive) gets none on
+its Software entity; the per-task Computations already carry the truth.
 
-**A digest pins content, not availability.** Under Docker's containerd image store `Id`
-*is* the manifest digest, so `containerDigest` and `containerImageId` are the same string —
-for a pulled image (`cm4ai/cellmaps_ppidownloader:0.2.2` → `sha256:85b359d3…`, matching
-what Docker Hub serves) and equally for one built locally that exists on a single machine.
-Under the classic image store they differ and a never-pushed image reports no repo digest
-at all. So a digest identifies exactly which bits ran; whether anyone else can obtain them
-depends on the repository having been pushed, which nothing visible locally can confirm.
+**A digest pins content, not availability.** Under Docker's containerd image store `Id` *is*
+the manifest digest, so `containerDigest` and `containerImageId` are the same string — for a
+pulled image and equally for one built locally that exists nowhere else. Under the classic
+store they differ, and a never-pushed image reports no repo digest at all. So a digest says
+exactly which bits ran; whether anyone else can get them depends on a push that nothing
+locally can confirm.
 
-Everything here is best-effort: no engine enabled, engine not on the PATH, image already
-deleted, inspect times out — each leaves the crate exactly as it would have been. Only
-`docker` and `podman` are auto-detected; Singularity and Apptainer run image *files* with
-no daemon to interrogate, so they are not guessed at.
+Best-effort throughout. Only `docker` and `podman` are auto-detected — Singularity and
+Apptainer run image *files*, with no daemon to interrogate.
 
 ### If your tasks die with an argparse usage dump
 
-Not a plugin problem, but you will meet it the first time you point a workflow at
-single-purpose community tool images, and the symptom does not name the cause. Images built
-to be run as `docker run image --help` set an entrypoint:
+Not a plugin problem, but you'll meet it with single-purpose tool images. Images built to be
+run as `docker run image --help` set an entrypoint:
 
 ```dockerfile
 ENTRYPOINT ["mytoolcmd.py"]
 ```
 
-Nextflow launches a task as `docker run <image> /bin/bash -ue .command.sh`, which with that
-entrypoint becomes `mytoolcmd.py /bin/bash -ue .command.sh` — the tool parses the launcher
-as its own arguments and exits non-zero, usually printing its usage. Nextflow can override
-the entrypoint, but as of 25.10 only through the environment:
+Nextflow launches tasks as `docker run <image> /bin/bash -ue .command.sh`, which becomes
+`mytoolcmd.py /bin/bash -ue .command.sh` — the tool parses the launcher as its own arguments
+and exits non-zero. As of 25.10 the override is environment-only:
 
 ```bash
 export NXF_CONTAINER_ENTRYPOINT_OVERRIDE=true
 ```
 
-There is no `docker.entrypointOverride` config setting — `ContainerConfig.entrypointOverride()`
-reads `SysEnv` and `DockerConfig` does not override it. The alternative, if you would rather
-not depend on an environment variable that breaks the run when forgotten, is a two-line
-wrapper image that resets `ENTRYPOINT []`.
+There is no `docker.entrypointOverride` setting (`ContainerConfig.entrypointOverride()` reads
+`SysEnv`; `DockerConfig` doesn't override it). The alternative is a two-line wrapper image
+that resets `ENTRYPOINT []`.
 
-## Describing the tool a process runs
+## User-supplied metadata
 
-By default the process Software entity only reflects the Nextflow process (name, body
-source, script path) — Nextflow itself knows nothing about the underlying tool. To record
-the actual software, annotate the process with Nextflow's
-[`ext` directive](https://www.nextflow.io/docs/latest/reference/process.html#ext) (custom
-process directives are not allowed, so `ext` is the supported namespace for user metadata):
+Two hooks put in what Nextflow can't know. Keys and syntax:
+[CONFIGURATION.md](CONFIGURATION.md#fairscapemetadata). What they do to the graph:
 
-```nextflow
-process REVERSE {
-    ext fairscape: [
-        softwareName       : 'tac',
-        softwareVersion    : '8.32',
-        softwareAuthor     : 'Jay Lepreau, David MacKenzie (GNU coreutils)',
-        softwareDescription: 'A command-line utility that reverses the order of lines in a text file.',
-        softwareUrl        : 'https://www.gnu.org/software/coreutils/tac',
-        softwareFormat     : 'application/x-executable',
-        softwareKeywords   : ['coreutils', 'text-processing']
-    ]
-    ...
-}
+**`fairscape.metadata`** is overlaid onto the **root** entity after it's assembled — the long
+tail with no dedicated option: `associatedPublication`, `funder`, `principalInvestigator`,
+`citation`, `contactEmail`, `conditionsOfAccess`, `ethicalReview`, the `rai:*` properties,
+anything else the FAIRSCAPE profile root recognizes. It wins over computed values; `@id`,
+`@type`, `conformsTo` and `hasPart` are refused with a `WARN`.
+
+**`ext fairscape: [...]`** replaces fields on one process's Software entity (`softwareName` →
+`name`, `softwareVersion` → `version`, `softwareUrl` → `contentUrl`, and so on). Without it
+the entity describes the *Nextflow process*; with it, the *tool*. Nothing is lost — task
+Computations still carry the process name and still point here via `usedSoftware`.
+
+Nextflow whitelists directive names, so a custom bare directive is impossible; `ext` is the
+sanctioned namespace. Bad values are ignored with a `WARN` rather than failing the run —
+there's no way to reject something Nextflow already accepted into `ext`.
+
+## Where a Dataset's bytes are: `contentUrl` vs `localPath`
+
+A Dataset says where its bytes are with one of two properties, and which one it gets depends
+on whether the file is inside the crate.
+
+| Where the file is | Property | Value |
+| ----------------- | -------- | ----- |
+| published under the crate directory | `contentUrl` | crate-relative path (`tables/x.tsv`) |
+| a pipeline asset, or a remote input | `contentUrl` | absolute URI — the pinned GitHub URL, `s3://…` |
+| a work-directory intermediate | `localPath` | path relative to the run directory (`work/ab/cd…/x.tsv`) |
+
+The split exists because **a relative `contentUrl` is a promise that the file is at that path
+inside the crate.** [RO-Crate resolves a relative reference against the crate
+root](https://www.researchobject.org/ro-crate/specification/1.2/data-entities.html) and 1.2
+gives no way to spell one that escapes it. Work-directory intermediates are not under the
+crate root, so emitting a relative path for them made the crate assert a file was present
+where nothing was — 44 of 130 entities on nf-core/differentialabundance pointed at
+`work/…` paths that resolve to nothing from `results/`.
+
+[`localPath`](https://w3id.org/ro/terms#localPath) is RO-Crate's term for *the file was here
+when this ran*, carrying no claim that it still is — the honest reading of a work directory
+Nextflow may already have deleted. It is declared in the crate's `@context` as a bare term,
+spelled the way [RO-Crate 1.2's own context](https://w3id.org/ro/crate/1.2/context) spells
+it, so a consumer reading with either context gets the same IRI.
+
+Nothing else changes: the entity keeps its `name`, `md5`, `contentSize`, `format` and every
+provenance edge, so **the derivation chain through unpublished intermediates stays intact**.
+Only the false locator is gone.
+
+### The same rule on S3, Azure and Google Storage
+
+"Inside the crate directory" is a filesystem question, not a local-disk one, so the split
+holds for a crate written to an object store: both paths come from the same provider and are
+compared there. Three things are worth knowing before you run one.
+
+**Point `fairscape.file` at the output directory.** It defaults to `ro-crate-metadata.json`,
+which resolves from the launch directory. Set `outputDir = 's3://bucket/results'` and leave
+that default and the crate is written locally, so *no* published file is inside it — every one
+of them gets an absolute `s3://…` `contentUrl`. That crate is not wrong, but it is a
+description of a dataset rather than a package of one. Set the two together:
+
+```groovy
+outputDir = 's3://bucket/results'
+fairscape.file = 's3://bucket/results/ro-crate-metadata.json'
 ```
 
-The value of `ext.fairscape` **must be a map** (`[key: value, ...]`). Every key is optional
-and overrides exactly one field of that process's `EVI:Software` entity; missing keys keep
-the process-derived default shown below.
+**A cloud work directory reads like a local one.** Nextflow's `PathNormalizer` rewrites
+anything under `workDir` to a bare `work/ab/cd…` — scheme and bucket included — before the
+plugin sees it, so an intermediate still sitting at `s3://bucket/work/ab/cd…` is recorded as
+`localPath: work/ab/cd…`, exactly as it would be locally. That keeps crates comparable across
+connectors and is true as *where the run put it*, but note it does not hand you a URL for an
+intermediate that may in fact still be retrievable. Intermediates are scratch by construction
+— Nextflow will happily delete the work directory — so the crate does not promise otherwise.
 
-| `ext.fairscape` key   | Type            | Software field | Default when omitted |
-| --------------------- | --------------- | -------------- | -------------------- |
-| `softwareName`        | String          | `name`         | the process name (e.g. `REVERSE`) |
-| `softwareVersion`     | String          | `version`      | workflow manifest version, else git commit id |
-| `softwareAuthor`      | String          | `author`       | crate author (`fairscape.author` → manifest author → OS user) |
-| `softwareDescription` | String          | `description`  | the process body source as written in the workflow (must be ≥10 chars, else a generated fallback) |
-| `softwareUrl`         | String (URL or local path) | `contentUrl` | the script/module file that defines the process |
-| `softwareFormat`      | String (MIME type or label) | `format` | `nextflow` |
-| `softwareKeywords`    | List of strings (a bare string is accepted and wrapped in a list) | `keywords` | the crate keywords (`fairscape.keywords`) |
+**The `mode: 'copy'` precondition below is local-only.** Nextflow refuses to symlink across
+filesystems: `PublishDir.validatePublishMode()` forces `copy` (with a warning if you asked for
+`symlink`, `rellink` or `link`) whenever the publish target is not on the default filesystem.
+So a crate whose output directory is on S3, Azure or Google Storage cannot contain the
+dangling-link case at all — it is self-contained by construction. Only local runs can get
+this wrong.
 
-The process name itself is still preserved on every task Computation (its `description` and
-its `usedSoftware` link both reference the process), so nothing is lost by renaming the
-Software entity to the tool it runs.
+The workflow copy travels the same way: `<crateDir>/workflow/` is created and written with
+plain `java.nio` calls, which become a cross-provider stream copy when the crate directory is
+remote.
 
-The same values can be supplied from `nextflow.config` without editing the workflow —
-useful for annotating third-party pipelines:
+### The workflow travels with the crate
+
+`includeWorkflow` (default `true`) copies the workflow script and every config file the run
+used into `<crateDir>/workflow/`, and points the workflow Software entity's `contentUrl` at
+the copy:
+
+```
+results/
+  ro-crate-metadata.json
+  workflow/
+    main.nf                  <- workflow Software contentUrl: workflow/main.nf
+    nextflow.config          <- a Dataset, isPartOf the workflow Software
+    fairscape.config         <- and any -c config, because that changed the run too
+```
+
+Every Software entity whose definition was copied in points at the copy, not just the
+workflow one. A process declared in `main.nf` is declared in the `main.nf` sitting in
+`workflow/`, so its Software entity says `workflow/main.nf` too — otherwise the crate would
+describe those bytes with an absolute path on the machine that ran the pipeline while
+carrying them all along. Modules are untouched by this: they are not copied, so an nf-core
+process keeps normalizing to its commit-pinned
+`https://github.com/nf-core/<pipeline>/tree/<sha>/modules/…` URL, which is a better locator
+than any copy. An `ext.fairscape.softwareUrl` override still wins over both, since it names
+the tool rather than the file that declares the process.
+
+Without it a crate cannot reliably say what was run. A local pipeline normalizes to
+`file:///home/you/pipeline/main.nf`, which resolves on exactly one machine; a pipeline run
+from a registry lives in `~/.nextflow/assets/nf-core/<name>`, a cache shared by every run of
+that pipeline and gone as soon as it is updated. Neither survives zipping the crate and handing
+it to someone, which is the case the crate exists for.
+
+Copying is deliberately preferred over the alternative — writing the crate *into* the
+directory that holds `main.nf` so those files fall under the crate root. That works for a local
+pipeline, but not for a registry one, where the script is in a shared cache you must not write
+per-run output into. Copying handles both, keeps run artifacts out of your source tree, and
+leaves the output directory as the single thing to zip.
+
+`codeRepository` still records where the workflow came from, and the per-process Software
+entities still carry commit-pinned module URLs, so preferring the local copy loses nothing.
+The config files are described as Datasets rather than left as undeclared bytes in the payload;
+they have no `generatedBy` and nothing consumes them, so they entail as crate **inputs**, which
+is what a file that parameterizes the run is. `isPartOf` → the workflow Software keeps them out
+of `EVI:outputs`.
+
+Set `includeWorkflow = false` to go back to referencing the script where it sits.
+
+### Precondition: publish with `mode: 'copy'` if you want a portable crate
+
+`contentUrl` being crate-relative means the path is right. It does **not** by itself mean the
+bytes travel with the crate, and the plugin cannot tell the difference.
+
+Nextflow's default publish mode is `symlink`. A symlinked published file still lives at a path
+under the crate directory, so it still gets a relative `contentUrl` — but its bytes are in
+`work/`. Zip that crate and you ship dangling links; delete `work/` and the crate is hollow.
+
+So if the crate is meant to be archived, transferred, or handed to anyone, publish with
+`mode: 'copy'`:
 
 ```groovy
 process {
-    withName: 'REVERSE' {
-        ext.fairscape = [ softwareName: 'tac', softwareVersion: '8.32' ]
-    }
+    publishDir = [ path: { "${params.outdir}/${task.process.tokenize(':').last().toLowerCase()}" },
+                   mode: 'copy' ]
 }
 ```
 
-### Validation warnings
-
-The plugin never fails a run over a bad annotation — a crate that can't be built is skipped,
-not fatal — but it does emit a `WARN` to the console and `.nextflow.log` when it finds an
-`ext.fairscape` it will silently ignore, so mistakes don't pass unnoticed:
-
-- **Not a map.** `ext fairscape: ['made-up-property']` (a list) or any non-map value:
-  `process 'X' — ext.fairscape must be a map like [softwareName: 'tac', ...] but was a
-  ArrayList; the annotation will be ignored`.
-- **Unrecognized keys.** `ext fairscape: [madeUpProperty: 'x']`:
-  `process 'X' — ext.fairscape has unrecognized key(s) [madeUpProperty] that will be ignored;
-  supported keys are [softwareName, softwareVersion, ...]`. Known keys in the same map are
-  still applied; only the unknown ones are dropped.
-
-## Adding workflow-level metadata
-
-The process `ext` directive annotates one Software entity. To add fields to the **root**
-crate entity (the `["Dataset", "EVI#ROCrate"]` node describing the run as a whole), set
-`fairscape.metadata` in `nextflow.config` to a map. Each key becomes a property on the root
-node:
-
-```groovy
-fairscape {
-    author  = 'Jane Roe'
-    metadata = [
-        associatedPublication: 'https://doi.org/10.1234/example',
-        funder               : 'NIH Bridge2AI (OT2OD032742)',
-        principalInvestigator: 'Jane Roe',
-        citation             : 'Roe J. et al. Example Pipeline. 2026.',
-        conditionsOfAccess   : 'Available for non-commercial research use only.'
-    ]
-}
-```
-
-Use this for the long tail of root fields that have no dedicated `fairscape.*` option. The
-[FAIRSCAPE profile](https://w3id.org/fairscape/profile/0.1) root entity already recognizes
-many such fields — `associatedPublication`, `citation`, `funder`, `principalInvestigator`,
-`publisher`, `contactEmail`, `conditionsOfAccess`, `copyrightNotice`, `ethicalReview`, and
-the Croissant `rai:*` responsible-AI fields among them — and any other key is preserved as an
-extra property. Values should match the type the field expects (`keywords`, for instance, is
-a list of strings).
-
-Common fields have dedicated options that are easier to set and are documented in the config
-scope: `author`, `description`, `keywords`, `license`, and `organization` (→ `publisher`).
-`fairscape.metadata` is merged **on top of** the computed root, so a key set both ways takes
-its value from `metadata`. The four structural keys the plugin manages — `@id`, `@type`,
-`conformsTo`, and `hasPart` — cannot be overridden; supplying one in `metadata` is ignored
-with a `WARN`.
+nf-core pipelines already do this — they set `publish_dir_mode = 'copy'` by default — which is
+why the example crates in `examples/nf-core/` are self-contained. A hand-written pipeline that
+never sets `mode` is not. This is a property of your pipeline, not of the plugin, and it is
+worth checking before you publish a crate rather than after.
 
 ## Describing directory outputs
 
-Nextflow publishes a `path 'results'` output as a single directory, so the crate gets one
-Dataset with `format: unknown`, no checksum and no schema — everything the step actually
-produced stays invisible. `fairscape.expandDirectories = true` walks each published
-directory and registers the files inside it:
+A `path 'results'` output publishes as one directory, so the crate gets one Dataset with
+`format: unknown`, no checksum and no schema — everything the step produced stays invisible.
+`expandDirectories = true` walks it and registers the files inside.
 
-```groovy
-fairscape {
-    expandDirectories = true
-    expandPatterns    = ['**/*.tsv', '**/*.csv', '**/*.json']  // omit to describe every file
-    expandMaxFiles    = 1000
-}
-```
+Each expanded file becomes a Dataset with `isPartOf` → the directory and `generatedBy` → the
+Computation that produced it. The directory Dataset stays, now with the recursive
+`contentSize` of its contents. Expanded files are deliberately *not* added to the producing
+Computation's `generated` — the directory already stands for them — but the `generatedBy`
+edge means they still count as crate outputs and the evidence graph still walks back.
 
-Each expanded file becomes a Dataset with `isPartOf` → the directory's Dataset and
-`generatedBy` → the Computation that produced the directory. The directory Dataset stays,
-now carrying the recursive `contentSize` of its contents. Expanded files are deliberately
-*not* added to the producing Computation's `generated` list — the directory already stands
-for them there — but the `generatedBy` edge means they still appear as crate outputs and the
-evidence graph still walks back from them to the step that made them.
-
-Files are walked in sorted order and capped at `expandMaxFiles` per directory; hitting the
-cap logs a `WARN` naming the directory and how many files were left out.
+Files are walked in sorted order and capped at `expandMaxFiles`; hitting the cap logs a
+`WARN` naming the directory and the count dropped.
 
 ## Inferred schemas
 
-`fairscape.schemas = true` gives every described csv/tsv an `EVI:Schema` node, linked from
-its Dataset by `evi:schema`. This is a Groovy port of `fairscape-cli schema infer`
-(`fairscape_models.schema.tabular.TabularSchema.infer`), which delegates column typing to
-frictionless's `describe()`; `nextflow/prov/schema/TabularSchemaInferrer.groovy` reproduces
-both layers:
+`schemas = true` gives every described csv/tsv an `EVI:Schema` node linked by `evi:schema`.
+It's a Groovy port of `fairscape-cli schema infer`
+(`fairscape_models.schema.tabular.TabularSchema.infer`), reproducing both layers:
 
 - frictionless's `Detector.detect_schema` — the candidate list (`yearmonth, geopoint,
   duration, geojson, object, array, datetime, time, date, integer, number, boolean, year,
-  string`) raced against the first `schemaSampleSize` rows at the 90% confidence threshold,
-  the `field{N}` naming and dedup rules, and the `any` fallback for a column nothing wins.
-- fairscape's mapping of that type onto the six canonical JSON-Schema types, keeping the
-  frictionless type under `source-type` when the mapping is lossy (`date` → `string`,
-  `year` → `integer`, `geopoint` → `array`, …).
+  string`) raced over the first `schemaSampleSize` rows at 90% confidence, the `field{N}`
+  naming and dedup rules, and the `any` fallback.
+- fairscape's mapping onto the six canonical JSON-Schema types, keeping the frictionless type
+  under `source-type` when lossy (`date` → `string`, `year` → `integer`, …).
 
-The emitted document is what the CLI writes, minus `fairscapeVersion` (a Python package
-version the plugin has no business asserting; pydantic fills it in on read) and with a
-deterministic ARK in place of the CLI's random uuid suffix, so crates stay reproducible
-across `-resume`.
+The document is what the CLI writes minus `fairscapeVersion`, with a deterministic ARK
+instead of the CLI's random uuid, so crates stay reproducible across `-resume`.
 
-Two approximations, neither reachable from ordinary scientific tables: `geojson` cells are
-recognized structurally rather than by running the full GeoJSON JSON-Schema profile, and
-`duration` accepts the ISO-8601 designator form but not isodate's alternate
-`P0003-06-04T12:30:05` calendar form.
+Two approximations, neither reachable from ordinary tables: `geojson` is recognized
+structurally rather than by the full JSON-Schema profile, and `duration` accepts the ISO-8601
+designator form but not isodate's `P0003-06-04T12:30:05` calendar form.
 
-**Wide tables.** A 1024-dimension embedding would otherwise emit 1024 scalar properties.
-`schemaArrayThreshold = N` collapses a trailing run of at least N identically-typed columns
-into one spanning-array property — `index: "1::"`, `items`, equal `min-items`/`max-items` —
+**Wide tables.** `schemaArrayThreshold = N` collapses a trailing run of ≥ N same-typed
+columns into one spanning-array property (`index: "1::"`, equal `min-items`/`max-items`) —
 the shape the hand-written CM4AI embedding schemas use, and the one the CLI's
-`build_frictionless_schema` expands again for row validation.
+`build_frictionless_schema` expands again for validation.
 
-Only `csv` and `tsv` are supported; the CLI's parquet/HDF5/WFDB/DICOM inference is not
-ported. A file that cannot be described logs a `WARN` and keeps its Dataset without a schema.
+csv/tsv only; parquet/HDF5/WFDB/DICOM inference is not ported.
 
 ## ARK minting
 
-`ark:{naan}/{prefix}-{slug(name)}-{sha1(sourceId)[0:7]}`, where the hashed source id is:
+`ark:{naan}/{prefix}-{slug(name)}-{sha1(sourceId)[0:7]}`:
 
-| Entity | Prefix | Hashed source id |
-| ------ | ------ | ---------------- |
+| Entity | Prefix | Hashed source |
+| ------ | ------ | ------------- |
 | Root crate | `rocrate` | session id |
 | Run Computation | `computation` | session id + `#run` |
 | Task Computation | `computation` | task hash |
@@ -371,17 +381,16 @@ ported. A file that cannot be described logs a `WARN` and keeps its Dataset with
 | Nextflow Software | `software` | `nextflow-<version>` |
 | Dataset | `dataset` | normalized file path |
 | Schema | `schema` | the ARK of the Dataset it describes |
+| Container | `container` | content digest, else the image reference |
 
-Identifiers are deterministic: `-resume` reproduces the same ARKs for unchanged tasks and
-files. A published file and its work-directory source share a single Dataset ARK.
+Deterministic: `-resume` reproduces the same ARKs for unchanged tasks and files. A published
+file and its work-directory source share one Dataset ARK.
 
 ## Validation
 
-The acceptance test validates emitted crates with the
-[`fairscape_models`](https://github.com/fairscape/fairscape-models) pydantic schema
-(`ROCrateV1_2.model_validate`) plus a referential-integrity check that every `ark:` reference
-resolves within the graph. See `nf-fairscape-test/validate_crate.py` and `make verify`.
+`make verify` validates an emitted crate with `ROCrateV1_2.model_validate`
+([`fairscape_models`](https://github.com/fairscape/fairscape-models)) plus a check that every
+`ark:` reference resolves in the graph (`nf-fairscape-test/validate_crate.py`).
 
-The derived artifacts have their own oracle: `tools/parity.sh <crate dir>` diffs the
-datasheet and evidence graph against the Python `fairscape-cli` implementation they were
-ported from. See [DATASHEET.md](DATASHEET.md#parity-with-the-cli).
+`tools/parity.sh <crate dir>` diffs the derived artifacts against `fairscape-cli` — see
+[DATASHEET.md](DATASHEET.md#parity-with-the-cli).

@@ -1,0 +1,1191 @@
+{
+    "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#",
+        "rai": "http://mlcommons.org/croissant/RAI/",
+        "prov": "http://www.w3.org/ns/prov#",
+        "usedSoftware": {
+            "@id": "https://w3id.org/EVI#usedSoftware",
+            "@type": "@id"
+        },
+        "usedDataset": {
+            "@id": "https://w3id.org/EVI#usedDataset",
+            "@type": "@id"
+        },
+        "generatedBy": {
+            "@id": "https://w3id.org/EVI#generatedBy",
+            "@type": "@id"
+        },
+        "generated": {
+            "@id": "https://w3id.org/EVI#generated",
+            "@type": "@id"
+        },
+        "annotates": {
+            "@id": "https://w3id.org/EVI#annotates",
+            "@type": "@id"
+        },
+        "hasDistribution": {
+            "@id": "https://w3id.org/EVI#hasDistribution",
+            "@type": "@id"
+        },
+        "localPath": "https://w3id.org/ro/terms#localPath"
+    },
+    "@graph": [
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "conformsTo": {
+                "@id": "https://w3id.org/ro/crate/1.2"
+            },
+            "about": {
+                "@id": "ark:59853/rocrate-nf-fairscape-test-7219b1d"
+            }
+        },
+        {
+            "@id": "ark:59853/rocrate-nf-fairscape-test-7219b1d",
+            "@type": [
+                "Dataset",
+                "https://w3id.org/EVI#ROCrate"
+            ],
+            "conformsTo": {
+                "@id": "https://w3id.org/fairscape/profile/0.1"
+            },
+            "name": "nf-fairscape-test",
+            "description": "Test pipeline for nf-fairscape",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "version": "0.1.0",
+            "author": "John Doe",
+            "license": "https://spdx.org/licenses/MIT",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "contentSize": "5.3 KB",
+            "hasPart": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-exec-r3-4b55c2e"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-exec-r2-fc973de"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-exec-r1-aeb680e"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-script-r3-09d7501"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-script-r2-9e14eee"
+                },
+                {
+                    "@id": "ark:59853/computation-echo-script-r1-707b61c"
+                },
+                {
+                    "@id": "ark:59853/computation-wc-sample-1-579ec07"
+                },
+                {
+                    "@id": "ark:59853/computation-tabulate-1-a5e77d3"
+                },
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                },
+                {
+                    "@id": "ark:59853/software-nextflow-1026e1d"
+                },
+                {
+                    "@id": "ark:59853/software-echo-exec-77d3278"
+                },
+                {
+                    "@id": "ark:59853/software-echo-script-c734af6"
+                },
+                {
+                    "@id": "ark:59853/software-wc-sample-3fa2ee7"
+                },
+                {
+                    "@id": "ark:59853/software-tabulate-150a140"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-exec-txt-8741403"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-exec-txt-08d53d1"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-exec-txt-e115e9b"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-foo-1-txt-abd01a6"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-foo-2-txt-0f06477"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-foo-2-txt-7564090"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-foo-1-txt-072f998"
+                },
+                {
+                    "@id": "ark:59853/dataset-script-json-4844829"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-foo-2-txt-b8bdf3f"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-foo-1-txt-252c7d3"
+                },
+                {
+                    "@id": "ark:59853/dataset-counts-txt-82eb352"
+                },
+                {
+                    "@id": "ark:59853/dataset-summary-c3a59e5"
+                },
+                {
+                    "@id": "ark:59853/dataset-read1-fq-gz-11b3562"
+                },
+                {
+                    "@id": "ark:59853/dataset-read2-fq-gz-4b728db"
+                },
+                {
+                    "@id": "ark:59853/dataset-testdata-csv-543169b"
+                },
+                {
+                    "@id": "ark:59853/dataset-exec-json-487db7e"
+                },
+                {
+                    "@id": "ark:59853/dataset-readme-txt-d9b07d3"
+                },
+                {
+                    "@id": "ark:59853/dataset-summary-tsv-a4cf2a6"
+                },
+                {
+                    "@id": "ark:59853/dataset-nextflow-config-f03699b"
+                },
+                {
+                    "@id": "ark:59853/schema-testdata-csv-4a49bf6"
+                },
+                {
+                    "@id": "ark:59853/schema-summary-tsv-24d014b"
+                }
+            ],
+            "associatedPublication": "https://doi.org/10.1234/example",
+            "funder": "NIH Bridge2AI",
+            "principalInvestigator": "Jane Roe"
+        },
+        {
+            "@id": "ark:59853/computation-nf-fairscape-test-4517228",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "Nextflow workflow run of 'nf-fairscape-test'",
+            "description": "Execution of the Nextflow workflow 'nf-fairscape-test' (session 4e32bd69-9ee6-42cb-9b7b-9f50586b821d)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "nextflow run . -plugins nf-fairscape@0.1.0",
+            "parameter": [
+                "input: /pipeline/testdata.csv",
+                "outdir: results",
+                "constant: foo"
+            ],
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                },
+                {
+                    "@id": "ark:59853/software-nextflow-1026e1d"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-read1-fq-gz-11b3562"
+                },
+                {
+                    "@id": "ark:59853/dataset-read2-fq-gz-4b728db"
+                },
+                {
+                    "@id": "ark:59853/dataset-testdata-csv-543169b"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r3-exec-txt-8741403"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-exec-txt-08d53d1"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-exec-txt-e115e9b"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-foo-1-txt-abd01a6"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-foo-2-txt-0f06477"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-foo-2-txt-7564090"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-foo-1-txt-072f998"
+                },
+                {
+                    "@id": "ark:59853/dataset-script-json-4844829"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-foo-2-txt-b8bdf3f"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-foo-1-txt-252c7d3"
+                },
+                {
+                    "@id": "ark:59853/dataset-counts-txt-82eb352"
+                },
+                {
+                    "@id": "ark:59853/dataset-summary-c3a59e5"
+                },
+                {
+                    "@id": "ark:59853/dataset-exec-json-487db7e"
+                }
+            ],
+            "startTime": "2026-07-31T09:36:37.331233473-04:00",
+            "endTime": "2026-07-31T09:36:48.645983096-04:00",
+            "nextflowVersion": "25.10.4",
+            "identifier": "4e32bd69-9ee6-42cb-9b7b-9f50586b821d"
+        },
+        {
+            "@id": "ark:59853/computation-echo-exec-r3-4b55c2e",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_EXEC (r3)",
+            "description": "Nextflow task 'ECHO_EXEC (r3)' (process ECHO_EXEC)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-exec-77d3278"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r3-exec-txt-8741403"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "57bd3349567e185c4864c79473a878e6"
+        },
+        {
+            "@id": "ark:59853/computation-echo-exec-r2-fc973de",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_EXEC (r2)",
+            "description": "Nextflow task 'ECHO_EXEC (r2)' (process ECHO_EXEC)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-exec-77d3278"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r2-exec-txt-08d53d1"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "223dc766d3ef6ecfd401a99d68a932f1"
+        },
+        {
+            "@id": "ark:59853/computation-echo-exec-r1-aeb680e",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_EXEC (r1)",
+            "description": "Nextflow task 'ECHO_EXEC (r1)' (process ECHO_EXEC)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-exec-77d3278"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r1-exec-txt-e115e9b"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "d738be535cc9a8916cea2dd720f089fd"
+        },
+        {
+            "@id": "ark:59853/computation-echo-script-r3-09d7501",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_SCRIPT (r3)",
+            "description": "Nextflow task 'ECHO_SCRIPT (r3)' (process ECHO_SCRIPT)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "echo $RANDOM > r3.foo.1.txt\n    echo $RANDOM > r3.foo.2.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-script-c734af6"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r3-foo-1-txt-abd01a6"
+                },
+                {
+                    "@id": "ark:59853/dataset-r3-foo-2-txt-0f06477"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "73eaa568a5dac8c9ff380e0411e6029d"
+        },
+        {
+            "@id": "ark:59853/computation-echo-script-r2-9e14eee",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_SCRIPT (r2)",
+            "description": "Nextflow task 'ECHO_SCRIPT (r2)' (process ECHO_SCRIPT)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "echo $RANDOM > r2.foo.1.txt\n    echo $RANDOM > r2.foo.2.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-script-c734af6"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r2-foo-1-txt-072f998"
+                },
+                {
+                    "@id": "ark:59853/dataset-r2-foo-2-txt-7564090"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "a42ea2f69339c54d09fb8ad435b68984"
+        },
+        {
+            "@id": "ark:59853/computation-echo-script-r1-707b61c",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "ECHO_SCRIPT (r1)",
+            "description": "Nextflow task 'ECHO_SCRIPT (r1)' (process ECHO_SCRIPT)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "echo $RANDOM > r1.foo.1.txt\n    echo $RANDOM > r1.foo.2.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-echo-script-c734af6"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-r1-foo-1-txt-252c7d3"
+                },
+                {
+                    "@id": "ark:59853/dataset-r1-foo-2-txt-b8bdf3f"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "babeeaa64d22485b073b6e01dbf421a7"
+        },
+        {
+            "@id": "ark:59853/computation-wc-sample-1-579ec07",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "WC_SAMPLE (1)",
+            "description": "Nextflow task 'WC_SAMPLE (1)' (process WC_SAMPLE)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "touch counts.txt\n    wc -l read1.fq.gz >> counts.txt\n    wc -l read2.fq.gz >> counts.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-wc-sample-3fa2ee7"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-read2-fq-gz-4b728db"
+                },
+                {
+                    "@id": "ark:59853/dataset-read1-fq-gz-11b3562"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-counts-txt-82eb352"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "e96a6a10bc5c4f64e83737d74d98a057"
+        },
+        {
+            "@id": "ark:59853/computation-tabulate-1-a5e77d3",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "TABULATE (1)",
+            "description": "Nextflow task 'TABULATE (1)' (process TABULATE)",
+            "runBy": "John Doe",
+            "dateCreated": "2026-07-31T09:36:37.331233473-04:00",
+            "command": "mkdir summary\n    printf 'sample\\tlines\\tflagged\\n' > summary/summary.tsv\n    printf '%s\\t%s\\ttrue\\n' 'test' \"$(head -1 counts.txt | awk '{print $1}')\" >> summary/summary.tsv\n    echo 'counts summarized by TABULATE' > summary/README.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-tabulate-150a140"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-counts-txt-82eb352"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-summary-c3a59e5"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-nf-fairscape-test-4517228"
+                }
+            ],
+            "identifier": "d798d701359dc600c7861a6b66313eff"
+        },
+        {
+            "@id": "ark:59853/software-nf-fairscape-test-ee2eb86",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "nf-fairscape-test",
+            "author": "John Doe",
+            "description": "Nextflow workflow script for the run 'nf-fairscape-test'",
+            "format": "nextflow",
+            "version": "0.1.0",
+            "contentUrl": "workflow/main.nf"
+        },
+        {
+            "@id": "ark:59853/software-nextflow-1026e1d",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "Nextflow",
+            "author": "Seqera Labs",
+            "description": "Nextflow workflow management system (https://www.nextflow.io/)",
+            "format": "application/java-archive",
+            "version": "25.10.4",
+            "contentUrl": "https://github.com/nextflow-io/nextflow"
+        },
+        {
+            "@id": "ark:59853/software-echo-exec-77d3278",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "ECHO_EXEC",
+            "author": "John Doe",
+            "description": "outfile = \"${prefix}.exec.txt\"\n    task.workDir.resolve(outfile).write(prefix)",
+            "format": "nextflow",
+            "version": "0.1.0",
+            "contentUrl": "workflow/main.nf",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-echo-script-c734af6",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "ECHO_SCRIPT",
+            "author": "John Doe",
+            "description": "echo \\$RANDOM > ${prefix}.${constant}.1.txt\necho \\$RANDOM > ${prefix}.${constant}.2.txt",
+            "format": "nextflow",
+            "version": "0.1.0",
+            "contentUrl": "workflow/main.nf",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-wc-sample-3fa2ee7",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "wc",
+            "author": "John Doe",
+            "description": "touch counts.txt\nwc -l ${fastq_1} >> counts.txt\nwc -l ${fastq_2} >> counts.txt",
+            "format": "nextflow",
+            "version": "8.32",
+            "contentUrl": "https://www.gnu.org/software/coreutils/wc",
+            "keywords": [
+                "coreutils",
+                "line-counting"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-tabulate-150a140",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "TABULATE",
+            "author": "John Doe",
+            "description": "mkdir summary\nprintf 'sample\\\\tlines\\\\tflagged\\\\n' > summary/summary.tsv\nprintf '%s\\\\t%s\\\\ttrue\\\\n' '${id}' \"\\$(head -1 ${counts} | awk '{print \\$1}')\" >> summary/summary.tsv\necho 'counts summarized by TABULATE' > summary/README.txt",
+            "format": "nextflow",
+            "version": "0.1.0",
+            "contentUrl": "workflow/main.nf",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-r3-exec-txt-8741403",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r3.exec.txt",
+            "author": "John Doe",
+            "description": "File 'r3.exec.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-exec-r3-4b55c2e"
+                }
+            ],
+            "contentUrl": "exec/r3.exec.txt",
+            "contentSize": "2",
+            "md5": "9d3e622df914d8de7f747b7b8b143c52"
+        },
+        {
+            "@id": "ark:59853/dataset-r2-exec-txt-08d53d1",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r2.exec.txt",
+            "author": "John Doe",
+            "description": "File 'r2.exec.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-exec-r2-fc973de"
+                }
+            ],
+            "contentUrl": "exec/r2.exec.txt",
+            "contentSize": "2",
+            "md5": "d279186428a75016b17e4df5ea43d080"
+        },
+        {
+            "@id": "ark:59853/dataset-r1-exec-txt-e115e9b",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r1.exec.txt",
+            "author": "John Doe",
+            "description": "File 'r1.exec.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-exec-r1-aeb680e"
+                }
+            ],
+            "contentUrl": "exec/r1.exec.txt",
+            "contentSize": "2",
+            "md5": "7c92cf1eee8d99cc85f8355a3d6e4b86"
+        },
+        {
+            "@id": "ark:59853/dataset-r3-foo-1-txt-abd01a6",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r3.foo.1.txt",
+            "author": "John Doe",
+            "description": "File 'r3.foo.1.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r3-09d7501"
+                }
+            ],
+            "contentUrl": "script/r3.foo.1.txt",
+            "contentSize": "6",
+            "md5": "67f81c3d21c89f3512b02fc8cb22b714"
+        },
+        {
+            "@id": "ark:59853/dataset-r3-foo-2-txt-0f06477",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r3.foo.2.txt",
+            "author": "John Doe",
+            "description": "File 'r3.foo.2.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r3-09d7501"
+                }
+            ],
+            "contentUrl": "script/r3.foo.2.txt",
+            "contentSize": "6",
+            "md5": "5b44d9112ce467946c57a2bd3ca1a9a9"
+        },
+        {
+            "@id": "ark:59853/dataset-r2-foo-2-txt-7564090",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r2.foo.2.txt",
+            "author": "John Doe",
+            "description": "File 'r2.foo.2.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r2-9e14eee"
+                }
+            ],
+            "contentUrl": "script/r2.foo.2.txt",
+            "contentSize": "6",
+            "md5": "e78778318842e67f1959f1771044e110"
+        },
+        {
+            "@id": "ark:59853/dataset-r2-foo-1-txt-072f998",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r2.foo.1.txt",
+            "author": "John Doe",
+            "description": "File 'r2.foo.1.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r2-9e14eee"
+                }
+            ],
+            "contentUrl": "script/r2.foo.1.txt",
+            "contentSize": "6",
+            "md5": "48eed848aaff2a7fd0cf4bed2cf3457a"
+        },
+        {
+            "@id": "ark:59853/dataset-script-json-4844829",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "script.json",
+            "author": "John Doe",
+            "description": "File 'script.json' used by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "application/json",
+            "generatedBy": [
+                
+            ],
+            "contentUrl": "script.json",
+            "contentSize": "1043",
+            "md5": "c2ccd84d8ebe356c914707eda9b3cc18"
+        },
+        {
+            "@id": "ark:59853/dataset-r1-foo-2-txt-b8bdf3f",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r1.foo.2.txt",
+            "author": "John Doe",
+            "description": "File 'r1.foo.2.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r1-707b61c"
+                }
+            ],
+            "contentUrl": "script/r1.foo.2.txt",
+            "contentSize": "6",
+            "md5": "ef710b982e8ab04bcfe611154adf2850"
+        },
+        {
+            "@id": "ark:59853/dataset-r1-foo-1-txt-252c7d3",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "r1.foo.1.txt",
+            "author": "John Doe",
+            "description": "File 'r1.foo.1.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-echo-script-r1-707b61c"
+                }
+            ],
+            "contentUrl": "script/r1.foo.1.txt",
+            "contentSize": "5",
+            "md5": "dc303f3d746ecb97828366a28b10aa62"
+        },
+        {
+            "@id": "ark:59853/dataset-counts-txt-82eb352",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "counts.txt",
+            "author": "John Doe",
+            "description": "File 'counts.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-wc-sample-1-579ec07"
+                }
+            ],
+            "contentUrl": "counts.txt",
+            "contentSize": "38",
+            "md5": "056476cb2bc1618323d5a8206177d2e2"
+        },
+        {
+            "@id": "ark:59853/dataset-summary-c3a59e5",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "summary",
+            "author": "John Doe",
+            "description": "Directory 'summary' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "unknown",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-tabulate-1-a5e77d3"
+                }
+            ],
+            "contentUrl": "table/summary",
+            "contentSize": "68"
+        },
+        {
+            "@id": "ark:59853/dataset-read1-fq-gz-11b3562",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "read1.fq.gz",
+            "author": "John Doe",
+            "description": "File 'read1.fq.gz' used by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "application/gzip",
+            "generatedBy": [
+                
+            ],
+            "contentUrl": "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/denbi-mg-course/read1.fq.gz",
+            "contentSize": "103189279",
+            "md5": "9152b9329898e04485e0995bb47edda5"
+        },
+        {
+            "@id": "ark:59853/dataset-read2-fq-gz-4b728db",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "read2.fq.gz",
+            "author": "John Doe",
+            "description": "File 'read2.fq.gz' used by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "application/gzip",
+            "generatedBy": [
+                
+            ],
+            "contentUrl": "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/denbi-mg-course/read2.fq.gz",
+            "contentSize": "108024646",
+            "md5": "a47f1d906358365753855140516bdccb"
+        },
+        {
+            "@id": "ark:59853/dataset-testdata-csv-543169b",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "testdata.csv",
+            "author": "John Doe",
+            "description": "File 'testdata.csv' used by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/csv",
+            "generatedBy": [
+                
+            ],
+            "evi:schema": {
+                "@id": "ark:59853/schema-testdata-csv-4a49bf6"
+            },
+            "localPath": "/pipeline/testdata.csv",
+            "contentSize": "197",
+            "md5": "965fb1f4845e0cfbb37ed4cbd466d6db"
+        },
+        {
+            "@id": "ark:59853/dataset-exec-json-487db7e",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "exec.json",
+            "author": "John Doe",
+            "description": "File 'exec.json' used by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "application/json",
+            "generatedBy": [
+                
+            ],
+            "contentUrl": "exec.json",
+            "contentSize": "398",
+            "md5": "03d4d4a3b3e3642bd1209c96990a5131"
+        },
+        {
+            "@id": "ark:59853/dataset-readme-txt-d9b07d3",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "README.txt",
+            "author": "John Doe",
+            "description": "File 'README.txt' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-tabulate-1-a5e77d3"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/dataset-summary-c3a59e5"
+                }
+            ],
+            "contentUrl": "table/summary/README.txt",
+            "contentSize": "30",
+            "md5": "93f092088cc6cd5f3b9dd5b062756076"
+        },
+        {
+            "@id": "ark:59853/dataset-summary-tsv-a4cf2a6",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "summary.tsv",
+            "author": "John Doe",
+            "description": "File 'summary.tsv' produced by the Nextflow workflow run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "text/tab-separated-values",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-tabulate-1-a5e77d3"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/dataset-summary-c3a59e5"
+                }
+            ],
+            "evi:schema": {
+                "@id": "ark:59853/schema-summary-tsv-24d014b"
+            },
+            "contentUrl": "table/summary/summary.tsv",
+            "contentSize": "38",
+            "md5": "7f6a2113d98f831c5c1d8e2dda84dd1d"
+        },
+        {
+            "@id": "ark:59853/dataset-nextflow-config-f03699b",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "nextflow.config",
+            "author": "John Doe",
+            "description": "Nextflow configuration file 'nextflow.config' for the run 'nf-fairscape-test'",
+            "datePublished": "2026-07-31T09:36:48.645983096-04:00",
+            "keywords": [
+                "test",
+                "nf-fairscape"
+            ],
+            "format": "nextflow-config",
+            "generatedBy": [
+                
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-nf-fairscape-test-ee2eb86"
+                }
+            ],
+            "contentUrl": "workflow/nextflow.config",
+            "contentSize": "1344",
+            "md5": "0f8d1cb29e484d139ec86bd3cc97c26c"
+        },
+        {
+            "@id": "ark:59853/schema-testdata-csv-4a49bf6",
+            "@type": "EVI:Schema",
+            "name": "testdata.csv",
+            "isPartOf": [
+                
+            ],
+            "@context": {
+                "@vocab": "https://schema.org/",
+                "evi": "https://w3id.org/EVI#"
+            },
+            "conformsTo": {
+                "@id": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "properties": {
+                "sample": {
+                    "description": "Column sample",
+                    "index": 0,
+                    "type": "string"
+                },
+                "fastq_1": {
+                    "description": "Column fastq_1",
+                    "index": 1,
+                    "type": "string"
+                },
+                "fastq_2": {
+                    "description": "Column fastq_2",
+                    "index": 2,
+                    "type": "string"
+                }
+            },
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+                "sample",
+                "fastq_1",
+                "fastq_2"
+            ],
+            "separator": ",",
+            "header": true,
+            "examples": [
+                
+            ],
+            "EVI:schemaType": "tabular",
+            "description": "Inferred schema for 'testdata.csv' from the Nextflow workflow run 'nf-fairscape-test'"
+        },
+        {
+            "@id": "ark:59853/schema-summary-tsv-24d014b",
+            "@type": "EVI:Schema",
+            "name": "summary.tsv",
+            "isPartOf": [
+                
+            ],
+            "@context": {
+                "@vocab": "https://schema.org/",
+                "evi": "https://w3id.org/EVI#"
+            },
+            "conformsTo": {
+                "@id": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "properties": {
+                "sample": {
+                    "description": "Column sample",
+                    "index": 0,
+                    "type": "string"
+                },
+                "lines": {
+                    "description": "Column lines",
+                    "index": 1,
+                    "type": "integer"
+                },
+                "flagged": {
+                    "description": "Column flagged",
+                    "index": 2,
+                    "type": "boolean"
+                }
+            },
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+                "sample",
+                "lines",
+                "flagged"
+            ],
+            "separator": "\t",
+            "header": true,
+            "examples": [
+                
+            ],
+            "EVI:schemaType": "tabular",
+            "description": "Inferred schema for 'summary.tsv' from the Nextflow workflow run 'nf-fairscape-test'"
+        }
+    ]
+}

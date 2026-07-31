@@ -1,0 +1,9 @@
+# Mounts this example directory into the node at the same absolute path it has
+# on the host, so the head process and the task pods resolve files identically.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /home/oj/fairscape/NewMoniWork/nf/nf-fairscape/examples/k8s-kind
+        containerPath: /home/oj/fairscape/NewMoniWork/nf/nf-fairscape/examples/k8s-kind

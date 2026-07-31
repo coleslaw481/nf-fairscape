@@ -1,0 +1,62 @@
+# =============================================================================
+# cellmaps_image_embedding — slim, CPU-only, model baked in
+# =============================================================================
+# Why not just use cm4ai/cellmaps_image_embedding:0.3.3?
+#
+#   * It is 8.3 GB compressed (~20 GB unpacked): continuumio/anaconda3 plus a
+#     CUDA build of torch. On a box with 33 GB free that image plus the
+#     equally large coembedding image does not fit.
+#   * The CUDA half of that weight buys nothing. cellmaps_image_embedding
+#     hardcodes CPU inference — runner.py sets `self._device = 'cpu'` and
+#     `self._cuda_available = False` and never reads them from a flag. The GPU
+#     code path is dead. A CPU-only torch build is not a downgrade here.
+#   * The pretrained DenseNet is downloaded at run time from a GitHub release
+#     (runner.py `_download_model`), so every task re-downloads 69 MB and the
+#     step cannot run offline. Baking it in makes the step hermetic and makes
+#     the weights part of the image identity.
+#
+# Same tool, same version (0.3.3, from PyPI — identical to what the upstream
+# image installs), ~1/8th the size, no network needed at run time.
+#
+# Build: docker build -f Dockerfile.image_embedding -t nf-cellmaps/image_embedding:0.3.3 .
+# =============================================================================
+FROM python:3.9-slim-trixie
+
+ARG TOOL_VERSION=0.3.3
+# CPU-only torch. Pinned: these are the newest cp39 wheels on the pytorch CPU
+# index, and torchvision 0.21.0 is the build matched to torch 2.6.0.
+ARG TORCH_VERSION=2.6.0
+ARG TORCHVISION_VERSION=0.21.0
+# The DenseNet121 the Cell Maps team trained on the HPA single-cell challenge
+# (CellProfiling/densenet release v0.1.0, fold 0) — the default --model_path.
+ARG MODEL_URL=https://github.com/CellProfiling/densenet/releases/download/v0.1.0/external_crop512_focal_slov_hardlog_class_densenet121_dropout_i768_aug2_5folds_fold0_final.pth
+
+# procps: Nextflow needs `ps` to sample task CPU/RAM.
+# libgl1/libglib2.0-0: shared libs opencv-python dylinks against (the tool
+# pulls in opencv-python, not the headless build, so they are not optional).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps libgl1 libglib2.0-0 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# python:3.9-slim ships pip 23.0.1, which rejects the pytorch index's wheels
+# ("inconsistent Name: expected 'typing-extensions', but metadata has
+# 'typing_extensions'") — PEP 503 name normalization was only fixed in pip 23.1.
+RUN pip install --no-cache-dir --upgrade pip
+
+RUN pip install --no-cache-dir \
+        --index-url https://download.pytorch.org/whl/cpu \
+        torch==${TORCH_VERSION} torchvision==${TORCHVISION_VERSION}
+
+# --no-deps would be wrong here (the tool has real deps), but torch is already
+# satisfied above so pip will not pull the CUDA build over it.
+RUN pip install --no-cache-dir cellmaps_image_embedding==${TOOL_VERSION}
+
+RUN mkdir -p /opt/models \
+    && curl -fsSL -o /opt/models/densenet121_fold0.pth "${MODEL_URL}"
+
+# The pipeline passes --model_path $CELLMAPS_DENSENET_MODEL so the step uses the
+# baked copy instead of re-downloading it.
+ENV CELLMAPS_DENSENET_MODEL=/opt/models/densenet121_fold0.pth
+
+ENTRYPOINT []
+CMD ["/bin/bash"]

@@ -1,0 +1,24 @@
+# Conda env for the Cell Maps pipeline on UVA Rivanna (CPU only).
+# setup.sh installs the six cellmaps_* packages on top of this.
+name: cellmaps
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  # node2vec imports pkg_resources, dropped in setuptools 81
+  - setuptools<81
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cpu
+      - torch==2.4.1+cpu
+      - torchvision==0.19.1+cpu
+      # caps declared by the cellmaps_* requirements
+      - "numpy>=1.24.4,<2.0.0"
+      - "networkx>=2.8,<2.9"
+      - "scipy>=1.10.1,<1.13"
+      - "scikit-learn>=0.19.0,<1.4.0"
+      - "opencv-python>=4.9.0.80,<4.10"
+      - "pillow>=10.2.0,<11.0.0"
+      - leidenalg==0.9.1
+      - python-igraph==0.10.8
+      - mlcrate==0.2.0

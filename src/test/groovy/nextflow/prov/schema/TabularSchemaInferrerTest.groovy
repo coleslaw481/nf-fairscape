@@ -181,4 +181,69 @@ class TabularSchemaInferrerTest extends Specification {
         !TabularSchemaInferrer.supports(Paths.get('/tmp/a.parquet'))
         !TabularSchemaInferrer.supports(Paths.get('/tmp/a'))
     }
+
+    def 'should skip a MultiQC comment preamble' () {
+        given: 'the shape nf-core modules publish for MultiQC custom content'
+        def file = Files.createTempFile('mqc', '.tsv')
+        file.text = """# id: 'contigs_length_statistics'
+# section_name: 'Contig length statistics'
+# plot_type: 'table'
+Sample\tTotalLength\tContigs
+MT192765\t29903\t1
+OY074094\t29782\t2
+"""
+
+        when:
+        def schema = TabularSchemaInferrer.infer(file, 'ark:99999/schema-mqc', 'contig_length_mqc.tsv', 'a description')
+
+        then: 'the real header is the header, not the first comment'
+        (schema.properties as Map).keySet() as List == ['Sample', 'TotalLength', 'Contigs']
+        schema.properties['TotalLength'].type == 'integer'
+
+        and: 'skipping is off when no comment character is configured'
+        def raw = TabularSchemaInferrer.infer(file, 'ark:99999/schema-mqc', 'x.tsv', 'a description', 100, 0, '')
+        (raw.properties as Map).keySet() as List == ["# id: 'contigs_length_statistics'"]
+
+        cleanup:
+        Files.deleteIfExists(file)
+    }
+
+    def 'should keep a hash-prefixed header that is a real header' () {
+        given: 'a BED-style table whose header line starts with #'
+        def file = Files.createTempFile('bed', '.tsv')
+        file.text = "#chrom\tstart\tend\nchr1\t100\t200\nchr2\t300\t400\n"
+
+        when:
+        def schema = TabularSchemaInferrer.infer(file, 'ark:99999/schema-bed', 'regions.tsv', 'a description')
+
+        then: 'it splits into as many fields as the data, so it is not a comment'
+        (schema.properties as Map).keySet() as List == ['#chrom', 'start', 'end']
+
+        cleanup:
+        Files.deleteIfExists(file)
+    }
+
+    def 'should treat an all-comment file as having no rows' () {
+        given:
+        def file = Files.createTempFile('empty', '.tsv')
+        file.text = "# only\n# comments\n"
+
+        when:
+        def schema = TabularSchemaInferrer.infer(file, 'ark:99999/schema-none', 'none.tsv', 'a description')
+
+        then: 'nothing is claimed about a file with no table in it'
+        (schema.properties as Map).isEmpty()
+
+        cleanup:
+        Files.deleteIfExists(file)
+    }
+
+    def 'dropComments leaves an uncommented table untouched' () {
+        given:
+        def records = [['a', 'b'], ['1', '2']]
+
+        expect: 'the CLI-parity path is a no-op'
+        TabularSchemaInferrer.dropComments(records, '#') === records
+        TabularSchemaInferrer.dropComments(records, null) === records
+    }
 }

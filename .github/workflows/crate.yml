@@ -1,0 +1,87 @@
+# The end-to-end check: run a real pipeline under the plugin and prove the crate
+# it publishes is a valid RO-Crate 1.2. This is NOT a parity check -- nothing here
+# is compared against fairscape-cli (see parity.yml for that); the question is
+# only whether the plugin, driven by Nextflow, emits a crate that validates.
+#
+# Two pipelines, because they exercise different halves of the renderer:
+#   nf-fairscape-test -- published directories, checksums, contentSizes, inferred
+#                        EVI:Schema, workflow `output {}` blocks
+#   letters-chain     -- a plain publishDir chain with `ext fairscape` metadata
+name: RO-Crate 1.2 validation
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  crate:
+    name: ${{ matrix.pipeline }} on Nextflow ${{ matrix.nextflow_version }}
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        nextflow_version: ['25.10']
+        pipeline:
+          - nf-fairscape-test
+          - examples/letters-chain
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install fairscape-models
+        run: python3 -m pip install --upgrade fairscape-models
+
+      - name: Setup Nextflow ${{ matrix.nextflow_version }}
+        uses: nf-core/setup-nextflow@b9f764e8ba5c76b712ace14ecbfcef0e40ae2dd8 # v1
+        with:
+          version: "${{ matrix.nextflow_version }}"
+
+      - name: Install the plugin
+        run: make install
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+
+      # each pipeline's config publishes to `results` relative to the LAUNCH dir,
+      # which is the repo root here
+      - name: Run ${{ matrix.pipeline }}
+        run: nextflow run ${{ matrix.pipeline }} -plugins nf-fairscape@$(cat VERSION)
+
+      # ROCrateV1_2.model_validate plus a referential-integrity sweep: an ARK that
+      # resolves to nothing is a crate that parses and still cannot be walked
+      - name: Validate the crate
+        run: python3 nf-fairscape-test/validate_crate.py results/ro-crate-metadata.json
+
+      - name: Check the derived artifacts landed
+        run: |
+          for artifact in provenance-graph.json provenance-graph.html \
+                          ro-crate-datasheet.html ro-crate-linkml.yaml ai_ready_score.json; do
+            test -s "results/$artifact" || { echo "missing or empty: results/$artifact"; exit 1; }
+            echo "ok: results/$artifact ($(wc -c < "results/$artifact") bytes)"
+          done
+
+      - name: Upload the crate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crate-${{ strategy.job-index }}
+          path: results/
+          retention-days: 14

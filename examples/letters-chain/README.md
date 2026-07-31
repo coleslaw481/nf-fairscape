@@ -1,15 +1,13 @@
 # letters-chain example
 
-A three-step pipeline showing a full provenance chain with saved intermediates:
+Three steps, a full provenance chain with saved intermediates:
 
-1. `MAKE_LIST` — takes a number (`--n`, default 8) and writes the first *n*
-   letters of the alphabet to `letters.txt`
-2. `REVERSE` — reverses the list into `reversed.txt`
-3. `SPLIT_HALVES` — divides the reversed list into `first_half.txt` and
-   `second_half.txt`
+1. `MAKE_LIST` — writes the first *n* letters (`--n`, default 8) to `letters.txt`
+2. `REVERSE` — reverses them into `reversed.txt`
+3. `SPLIT_HALVES` — splits that into `first_half.txt` and `second_half.txt`
 
-Every step publishes its output to `results/`, so each intermediate file becomes
-an `EVI:Dataset` in the crate and the Computations chain together through them:
+Every step publishes to `results/`, so each intermediate becomes an `EVI:Dataset` and the
+Computations chain through them:
 
 ```
                     MAKE_LIST ──generated──> letters.txt
@@ -17,49 +15,36 @@ letters.txt  ──used──> REVERSE ──generated──> reversed.txt
 reversed.txt ──used──> SPLIT_HALVES ──generated──> first_half.txt, second_half.txt
 ```
 
-Each Computation also carries `isPartOf` → the run-level Computation, and each
-Dataset carries the inverse `generatedBy` edge back to its producer.
+Each Computation also has `isPartOf` → the run Computation, each Dataset the inverse
+`generatedBy`.
 
 ```bash
-nextflow run . -plugins nf-fairscape@0.1.0            # default: 8 letters
+nextflow run . -plugins nf-fairscape@0.1.0            # 8 letters
 nextflow run . -plugins nf-fairscape@0.1.0 --n 12     # or pick a length
 
 python3 -m json.tool results/ro-crate-metadata.json | less
 ```
 
-Note that the input number itself is a scalar (`val`) input, so it does not appear
-as a Dataset — it shows up in the run Computation's `parameter` list (`n: 8`) and
-in the `MAKE_LIST` command (`head -n 8`).
+`--n` is a scalar (`val`) input, so it isn't a Dataset — it appears in the run Computation's
+`parameter` list (`n: 8`) and in the `MAKE_LIST` command (`head -n 8`).
 
-Every step carries an `ext fairscape: [...]` tool annotation, so each Software
-entity names the GNU coreutils tool it runs (`head`, `tac`, and `wc`/`head`/`tail`)
-with a full `softwareName` / `softwareVersion` / `softwareAuthor` /
-`softwareDescription` / `softwareUrl` / `softwareKeywords` set instead of the
-process-derived default. The annotation is optional per process, so any of these
-could be dropped to fall back to the workflow-derived Software.
+**Software.** Every step carries an `ext fairscape: [...]` annotation, so each Software
+entity names the coreutils tool it runs (`head`, `tac`, `wc`/`head`/`tail`) rather than the
+process. It's optional per process — drop it and that entity falls back to the default.
 
-The root RO-Crate entity is described two ways: core fields via dedicated
-`fairscape` options (`author`, `description`, `keywords`, `license`,
-`organization` → `publisher`), and the long tail via `fairscape.metadata` (here
-`name`, `principalInvestigator`, `funder`, `associatedPublication`, `citation`,
-`contactEmail`, `conditionsOfAccess`, `copyrightNotice`) merged onto the root —
-the run-level counterpart of the per-process `ext` annotation. See
-`docs/FAIRSCAPE.md` for both mechanisms.
-
-The run also writes the derived artifacts next to the crate — open either in a browser:
+**Root metadata.** Core fields via the dedicated options (`author`, `description`,
+`keywords`, `license`, `organization` → `publisher`); the long tail via `fairscape.metadata`
+(`name`, `principalInvestigator`, `funder`, `associatedPublication`, `citation`,
+`contactEmail`, `conditionsOfAccess`, `copyrightNotice`). Every key both hooks accept:
+`docs/CONFIGURATION.md`.
 
 ```bash
 xdg-open results/provenance-graph.html    # the full chain, interactive
 xdg-open results/ro-crate-datasheet.html  # datasheet + AI-Readiness score
 ```
 
-`results/provenance-graph.{json,html}` are rooted at the crate, so both halves and
-everything upstream of them are in one graph. For a graph rooted at a single entity,
-use the CLI:
-
-```bash
-fairscape-cli build evidence-graph results <ark of second_half.txt from the crate>
-```
+The graph is rooted at the crate, so both halves and everything upstream are in one picture.
+For a graph rooted at one entity: `fairscape-cli build evidence-graph results <ark>`.
 
 Print the chain from the crate:
 

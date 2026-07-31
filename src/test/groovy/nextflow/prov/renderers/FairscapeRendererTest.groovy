@@ -16,6 +16,7 @@
 
 package nextflow.prov.renderers
 
+import nextflow.config.Manifest
 import spock.lang.Specification
 
 class FairscapeRendererTest extends Specification {
@@ -111,6 +112,127 @@ class FairscapeRendererTest extends Specification {
         null                | null
         'cli'               | ['cli']
         ['cli', 'genomics'] | ['cli', 'genomics']
+    }
+
+
+    def 'should slug an ARK from the bare process name' () {
+        expect: 'the workflow scope nf-core puts on every process name is dropped'
+        FairscapeRenderer.bareName(name) == expected
+
+        where:
+        name                                                       | expected
+        'FASTQC'                                                   | 'FASTQC'
+        'NFCORE_DEMO:DEMO:FASTQC'                                  | 'FASTQC'
+        'NFCORE_PAIRGENOMEALIGN:PAIRGENOMEALIGN:PAIRALIGN_M2O:ALIGNMENT_LASTDB' | 'ALIGNMENT_LASTDB'
+        'NFCORE_DEMO:DEMO:MULTIQC (demo)'                          | 'MULTIQC (demo)'
+        null                                                       | null
+    }
+
+    def 'two aliases of one module keep distinct ARKs' () {
+        given: 'the same module included twice under different names'
+        def script = '/modules/nf-core/fastqc/main.nf'
+
+        when:
+        def raw = FairscapeRenderer.mintArk('59853', 'software', FairscapeRenderer.bareName('NFCORE_RNASEQ:RNASEQ:FASTQC_RAW'),
+            script + '#NFCORE_RNASEQ:RNASEQ:FASTQC_RAW')
+        def trimmed = FairscapeRenderer.mintArk('59853', 'software', FairscapeRenderer.bareName('NFCORE_RNASEQ:RNASEQ:FASTQC_TRIM'),
+            script + '#NFCORE_RNASEQ:RNASEQ:FASTQC_TRIM')
+
+        then: 'the readable part names the alias and the hash still separates them'
+        raw.startsWith('ark:59853/software-fastqc-raw-')
+        trimmed.startsWith('ark:59853/software-fastqc-trim-')
+        raw != trimmed
+
+        and: 'minting again from the same source is stable, as -resume relies on'
+        raw == FairscapeRenderer.mintArk('59853', 'software', FairscapeRenderer.bareName('NFCORE_RNASEQ:RNASEQ:FASTQC_RAW'),
+            script + '#NFCORE_RNASEQ:RNASEQ:FASTQC_RAW')
+    }
+
+    def 'should strip the delimiters around a script block, not just the ends' () {
+        given: 'an nf-core module body: a Groovy prologue, then the command'
+        def source = """def args = task.ext.args ?: ''
+\"\"\"
+fastqc \$args \$reads
+\"\"\""""
+
+        when:
+        def stripped = FairscapeRenderer.stripScriptDelimiters(source)
+
+        then: 'no delimiter survives on either side'
+        !stripped.contains('\"\"\"')
+        stripped.contains("def args = task.ext.args ?: ''")
+        stripped.contains('fastqc')
+    }
+
+    def 'should leave a body with no script block alone' () {
+        expect:
+        FairscapeRenderer.stripScriptDelimiters('exec:\n  println 1') == 'exec:\n  println 1'
+        FairscapeRenderer.stripScriptDelimiters(null) == null
+    }
+
+    def 'a computation must not use what it generated' () {
+        given: 'a run that publishes a file Nextflow wrote and fed to a task'
+        def collated = ['@id': 'ark:59853/dataset-collated-versions-yml-1234567']
+        def report = ['@id': 'ark:59853/dataset-report-html-7654321']
+
+        when:
+        def used = FairscapeRenderer.withoutGenerated([collated], [collated, report])
+
+        then: 'the self edge that would close a cycle is gone'
+        used == []
+
+        and: 'genuine inputs are untouched'
+        FairscapeRenderer.withoutGenerated([report], [collated]) == [report]
+        FairscapeRenderer.withoutGenerated([report], []) == [report]
+        FairscapeRenderer.withoutGenerated([], [collated]) == []
+    }
+
+    def 'a file outside the crate keeps an absolute URI, everything else is a localPath' () {
+        expect: 'the value PathNormalizer produced decides which property can carry it'
+        FairscapeRenderer.outsideLocator(normalized) == locator
+
+        where:
+        normalized                                  | locator
+        // a work-dir intermediate, local or cloud: PathNormalizer strips the scheme
+        // and the run-relative path is all the crate can honestly say
+        'work/ab/cd12/out.bam'                      | ['localPath': 'work/ab/cd12/out.bam']
+        // an absolute local path resolves on one machine only
+        'file:///data/refs/genome.fa'               | ['localPath': '/data/refs/genome.fa']
+        // absolute and resolvable for anyone: stays a contentUrl
+        's3://ngi-igenomes/references/genome.fa'    | ['contentUrl': 's3://ngi-igenomes/references/genome.fa']
+        'https://github.com/nf-core/demo/tree/1a2b' | ['contentUrl': 'https://github.com/nf-core/demo/tree/1a2b']
+        'az://container/inputs/samples.csv'         | ['contentUrl': 'az://container/inputs/samples.csv']
+        'gs://bucket/inputs/samples.csv'            | ['contentUrl': 'gs://bucket/inputs/samples.csv']
+        // nothing to say
+        null                                        | [:]
+        ''                                          | [:]
+    }
+
+    def 'should read the author from manifest contributors' () {
+        given:
+        def manifest = new Manifest(contributors: [
+            [name: 'Ada Lovelace', contribution: ['author', 'maintainer']],
+            [name: 'Someone Else', contribution: ['contributor']],
+        ])
+
+        expect: 'only the credited author is named'
+        FairscapeRenderer.manifestContributors(manifest) == 'Ada Lovelace'
+    }
+
+    def 'should name every contributor when none is credited as author' () {
+        given:
+        def manifest = new Manifest(contributors: [
+            [name: 'Ada Lovelace', contribution: ['maintainer']],
+            [name: 'Grace Hopper', contribution: ['contributor']],
+        ])
+
+        expect:
+        FairscapeRenderer.manifestContributors(manifest) == 'Ada Lovelace, Grace Hopper'
+    }
+
+    def 'should fall through when there are no contributors' () {
+        expect:
+        FairscapeRenderer.manifestContributors(new Manifest([:])) == null
     }
 
 }

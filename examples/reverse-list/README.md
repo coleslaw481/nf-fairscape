@@ -1,62 +1,44 @@
 # reverse-list example
 
-Minimal pipeline: builds a three-item list, reverses it with `tac`, and publishes
-`reversed.txt`. The plugin writes the EVI RO-Crate next to the published output.
+Minimal pipeline: build a three-item list, reverse it with `tac`, publish `reversed.txt`.
+The crate lands next to the output.
 
 ```bash
-# from the repo root, install the plugin once
-make install
-
-# run the example
+make install                                  # from the repo root, once
 cd examples/reverse-list
 nextflow run . -plugins nf-fairscape@0.1.0
 
-# view the output and the crate
 cat results/reversed.txt
 python3 -m json.tool results/ro-crate-metadata.json | less
 ```
 
-The crate contains one run-level Computation, one `REVERSE` task Computation, the
-`list.txt` input Dataset, and the published `reversed.txt` Dataset with a
-`generatedBy` edge back to the task.
+The crate holds a run Computation, the `REVERSE` task Computation, the `list.txt` input
+Dataset, and the published `reversed.txt` Dataset with a `generatedBy` edge back to the task.
 
-### Describing the software
+**Software.** `REVERSE` carries an `ext fairscape: [...]` annotation, so its Software entity
+is `tac` — name, version, author, description, URL and keywords — instead of the
+process-derived default. Full key list: `docs/CONFIGURATION.md`.
 
-The `REVERSE` process carries an `ext fairscape: [...]` annotation describing the
-actual tool it runs, so the Software entity in the crate is `tac` with a full
-`softwareName` / `softwareVersion` / `softwareAuthor` / `softwareDescription` /
-`softwareUrl` / `softwareKeywords` set instead of the process-derived default. Every
-`software*` key attaches to that process's Software entity; see `docs/FAIRSCAPE.md`
-for the full list.
-
-### Describing the run (root metadata)
-
-Core crate fields are set with dedicated `fairscape` options — `author`,
-`description`, `keywords`, `license`, and `organization` (→ `publisher`). Everything
-else goes in `fairscape.metadata`, a map merged onto the root RO-Crate entity: this
-example adds `name`, `principalInvestigator`, `funder`, `associatedPublication`,
-`citation`, `contactEmail`, `conditionsOfAccess`, and `copyrightNotice`. Inspect the
-assembled root with:
+**Root metadata.** Core fields use the dedicated options (`author`, `description`,
+`keywords`, `license`, `organization` → `publisher`); the rest goes in `fairscape.metadata`,
+here `name`, `principalInvestigator`, `funder`, `associatedPublication`, `citation`,
+`contactEmail`, `conditionsOfAccess`, `copyrightNotice`. Inspect the assembled root:
 
 ```bash
 python3 -c "import json; r=[n for n in json.load(open('results/ro-crate-metadata.json'))['@graph'] if 'ROCrate' in str(n.get('@type'))][0]; [print(f'{k:22} {r[k]}') for k in ('name','description','author','keywords','license','publisher','funder','principalInvestigator','associatedPublication','citation','contactEmail','conditionsOfAccess','copyrightNotice') if k in r]"
 ```
 
-The run also writes the derived artifacts next to the crate — open either in a browser:
+The derived artifacts land beside the crate:
 
 ```bash
 xdg-open results/provenance-graph.html    # interactive evidence graph
 xdg-open results/ro-crate-datasheet.html  # datasheet + AI-Readiness score
 ```
 
-The graph is rooted at the crate, so it covers every published output at once. To build
-one for a single entity instead, use the CLI:
+The graph is rooted at the crate, so it covers every output at once. For a single entity,
+use the CLI: `fairscape-cli build evidence-graph results <ark>`.
 
-```bash
-fairscape-cli build evidence-graph results <ark of reversed.txt from the crate>
-```
-
-Optionally validate against the `fairscape_models` schema:
+Validate:
 
 ```bash
 PYTHONPATH=/path/to/fairscape_models python3 ../../nf-fairscape-test/validate_crate.py results/ro-crate-metadata.json

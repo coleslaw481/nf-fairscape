@@ -1,0 +1,73 @@
+# The port's acceptance oracle. `nextflow.prov.parity` re-derives every artifact
+# fairscape-cli derives -- inverses, inputs/outputs, evidence graph, LinkML/D4D,
+# AI-Ready score, datasheet, tabular schema -- from the same frozen crates and
+# diffs the two. The CLI is ground truth, so this job installs the LATEST release
+# from PyPI rather than pinning: a CLI release that changes any of those outputs
+# should turn this red, which is the whole point of running it.
+#
+# No Nextflow here -- the fixtures are committed crates, so nothing has to run a
+# pipeline to compare RO-Crate -> artifact. The pipeline check is crate.yml.
+name: Parity vs fairscape-cli
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+  # the ground truth moves on its own release schedule, so a week with no commits
+  # here is still a week in which parity can break
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  parity:
+    name: RO-Crate -> artifact parity
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # latest, deliberately unpinned -- see the header
+      - name: Install fairscape-cli from PyPI
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade fairscape-cli
+
+      - name: Record the ground truth
+        run: |
+          python3 -m pip show fairscape-cli fairscape-models pyyaml frictionless \
+            | grep -iE '^(name|version):'
+          python3 -m fairscape_cli --help > /dev/null
+
+      # FAIRSCAPE_PARITY_REQUIRED makes CliAvailableTest fail instead of letting the
+      # suite skip itself green if the install above silently did not take
+      - name: Parity suite
+        run: ./gradlew test --tests 'nextflow.prov.parity.*'
+        env:
+          FAIRSCAPE_PARITY_REQUIRED: '1'
+          GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-test-report
+          path: build/reports/tests/test
+          retention-days: 14

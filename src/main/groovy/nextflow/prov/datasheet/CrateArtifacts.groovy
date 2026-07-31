@@ -116,11 +116,19 @@ class CrateArtifacts {
         final tmp = metadataFile.resolveSibling(metadataFile.name + '.tmp')
         Files.write(tmp, JsonOutput.prettyPrint(JsonOutput.toJson(crate)).getBytes('UTF-8'))
         try {
-            Files.move(tmp, metadataFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            try {
+                Files.move(tmp, metadataFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            }
+            catch( java.nio.file.AtomicMoveNotSupportedException | UnsupportedOperationException
+                 | IllegalArgumentException e ) {
+                // Object stores have no atomic rename. nf-amazon signals this with
+                // IllegalArgumentException rather than the NIO-contract exception,
+                // so catching only the documented one loses every enrichment step.
+                Files.move(tmp, metadataFile, StandardCopyOption.REPLACE_EXISTING)
+            }
         }
-        catch( java.nio.file.AtomicMoveNotSupportedException e ) {
-            // object-store backed paths may not support atomic moves
-            Files.move(tmp, metadataFile, StandardCopyOption.REPLACE_EXISTING)
+        finally {
+            Files.deleteIfExists(tmp)
         }
     }
 
@@ -213,6 +221,7 @@ class CrateArtifacts {
         final datasetOrder = []
         final samples = []
         final usedDatasetIds = new LinkedHashSet<String>()
+        final partOfDatasetIds = new LinkedHashSet<String>()
 
         for( final entity : graph ) {
             final type = CrateJson.lastType(entity)
@@ -222,6 +231,8 @@ class CrateArtifacts {
                 if( !datasets.containsKey(id) )
                     datasetOrder << id
                 datasets[id] = (boolean) entity['generatedBy']
+                if( CrateJson.asList(entity['isPartOf']).any { ref -> CrateJson.refId(ref) } )
+                    partOfDatasetIds << id
             }
             if( (type == 'https://w3id.org/EVI#Sample' || type == 'EVI:Sample') && id )
                 samples << id
@@ -251,7 +262,13 @@ class CrateArtifacts {
 
         for( final id : datasetOrder ) {
             if( !usedDatasetIds.contains(id) ) {
-                outputs << id
+                // a file found inside a published directory is part of that
+                // directory's Dataset, not an output of the crate in its own
+                // right. Without this a run that publishes one MultiQC folder
+                // reports its thousand plot files as a thousand outputs, and the
+                // evidence graph starts a walk from every one of them.
+                if( !partOfDatasetIds.contains(id) )
+                    outputs << id
                 if( !datasets[id] )
                     inputs << id
             }

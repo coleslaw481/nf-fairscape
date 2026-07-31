@@ -234,6 +234,53 @@ class FairscapeConfig implements ConfigScope {
 
     @ConfigOption
     @Description('''
+        Character that introduces a comment line to skip when inferring a schema
+        (default: `#`). Real tables ship behind preambles — MultiQC custom-content
+        tables start with `# id: '...'` lines, and without this the first comment
+        becomes a one-column "header". A line is only treated as a comment when it
+        does not split into as many fields as the line after it, so a genuine
+        `#chrom<TAB>start<TAB>end` header still counts as a header. Set to an empty
+        string to skip nothing, which is what `fairscape-cli schema infer` does.
+    ''')
+    final String schemaCommentChar
+
+    @ConfigOption
+    @Description('''
+        Take each process Software entity's `version` from the `versions.yml` its
+        tasks emit, instead of from the workflow manifest (default: `true`). Every
+        nf-core module reports the version of the tool it actually ran there, so
+        without this a FastQC entity claims the pipeline's version number. Reads
+        one small file per process; `ext.fairscape.softwareVersion` still wins.
+    ''')
+    final boolean toolVersions
+
+    @ConfigOption
+    @Description('''
+        Describe file-valued pipeline parameters as inputs of the run (default:
+        `true`). A samplesheet named by `--input` is normally parsed in the
+        workflow body rather than staged into a task, so it never reaches the
+        crate even though it is the run's primary input. A parameter qualifies
+        when its value looks like a path to a file (it has a `/` and its last
+        segment has an extension); local paths must exist, remote URIs are
+        recorded without being fetched.
+    ''')
+    final boolean paramInputs
+
+    @ConfigOption
+    @Description('''
+        Copy the workflow script and its config files into the crate, under
+        `workflow/` (default: `true`). Without it the workflow Software entity
+        points at wherever the script happened to live — a `file:///home/you/...`
+        path that resolves on one machine, or a directory inside
+        `~/.nextflow/assets` shared by every run of that pipeline. Neither
+        travels, so zipping the crate loses the definition of what was run. With
+        it the crate carries its own workflow and `contentUrl` is crate-relative.
+        Copies two or three small text files.
+    ''')
+    final boolean includeWorkflow
+
+    @ConfigOption
+    @Description('''
         Describe the container each task ran in (default: `false`). Task
         Computations always carry `containerImage`, but that is the image
         REFERENCE the `container` directive resolved to — typically a mutable
@@ -287,6 +334,10 @@ class FairscapeConfig implements ConfigScope {
         schemaSampleSize = opts.schemaSampleSize != null ? opts.schemaSampleSize as int : 100
         schemaArrayThreshold = opts.schemaArrayThreshold != null ? opts.schemaArrayThreshold as int : 0
         schemaMaxFiles = opts.schemaMaxFiles != null ? opts.schemaMaxFiles as int : 500
+        schemaCommentChar = opts.schemaCommentChar != null ? opts.schemaCommentChar as String : '#'
+        toolVersions = opts.toolVersions != null ? opts.toolVersions as boolean : true
+        paramInputs = opts.paramInputs != null ? opts.paramInputs as boolean : true
+        includeWorkflow = opts.includeWorkflow != null ? opts.includeWorkflow as boolean : true
         containerProvenance = opts.containerProvenance as boolean
         containerEngineCommand = opts.containerEngineCommand
     }

@@ -1,0 +1,52 @@
+# =============================================================================
+# cellmaps_coembedding — slim, CPU torch
+# =============================================================================
+# cm4ai/cellmaps_coembedding has two tags and neither is usable here:
+#
+#   1.5.0  linux/amd64, 8.2 GB compressed (anaconda3 + CUDA torch)
+#   1.6.0  linux/arm64 ONLY — will not run on an x86_64 host
+#
+# So the amd64 option upstream is the 8 GB one, and it is 8 GB for the same
+# reason the image_embedding one is: a CUDA torch nobody asked for.
+#
+# Unlike image_embedding, coembedding DOES use the GPU when one is visible
+# (`torch.device("cuda" if torch.cuda.is_available() else "cpu")` in
+# proteinprojector/__init__.py). This image is CPU-only, which is the right
+# default at Cell Maps example scale (~166 genes, minutes on CPU). If you want
+# the GPU for a real-size run, build the CUDA variant instead:
+#
+#   docker build -f Dockerfile.coembedding --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu124 \
+#       -t nf-cellmaps/coembedding:1.5.0-cu124 .
+#
+# and run the pipeline with `-profile gpu` (which adds --gpus all).
+#
+# Version 1.5.0 is pinned to match what the pipeline has been validated against
+# and what the `ext fairscape` block in main.nf declares. 1.6.0 exists on PyPI
+# if you want to move forward — bump VERSIONS in nextflow.config, which drives
+# both the image tag and the recorded provenance so they cannot drift apart.
+#
+# Build: docker build -f Dockerfile.coembedding -t nf-cellmaps/coembedding:1.5.0 .
+# =============================================================================
+FROM python:3.9-slim-trixie
+
+ARG TOOL_VERSION=1.5.0
+ARG TORCH_VERSION=2.6.0
+ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
+
+# procps for Nextflow task metrics; build-essential because phenograph pulls in
+# packages without cp39 wheels on trixie.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# python:3.9-slim ships pip 23.0.1, which rejects the pytorch index's wheels
+# ("inconsistent Name: expected 'typing-extensions', but metadata has
+# 'typing_extensions'") — PEP 503 name normalization was only fixed in pip 23.1.
+RUN pip install --no-cache-dir --upgrade pip
+
+RUN pip install --no-cache-dir --index-url ${TORCH_INDEX} torch==${TORCH_VERSION}
+
+RUN pip install --no-cache-dir cellmaps_coembedding==${TOOL_VERSION}
+
+ENTRYPOINT []
+CMD ["/bin/bash"]

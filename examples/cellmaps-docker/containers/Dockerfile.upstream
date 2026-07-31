@@ -1,0 +1,40 @@
+# =============================================================================
+# Thin Nextflow-compatible wrapper around a published cm4ai/* image.
+# =============================================================================
+# The images the Cell Maps team publishes on Docker Hub (cm4ai/cellmaps_*) are
+# built to be run as `docker run cm4ai/cellmaps_x --help`, so they set
+#
+#     ENTRYPOINT ["cellmaps_xcmd.py"]
+#
+# Nextflow launches a task as `docker run <image> /bin/bash -ue .command.sh`,
+# which with that ENTRYPOINT becomes `cellmaps_xcmd.py /bin/bash -ue ...` and
+# dies with an argparse usage dump (exit 2). Nextflow can override the
+# entrypoint, but only via the NXF_CONTAINER_ENTRYPOINT_OVERRIDE=true
+# environment variable (it is NOT a nextflow.config setting in 25.10) — an
+# invisible dependency that breaks the run if whoever launches it forgets.
+# Resetting ENTRYPOINT here makes the images work under a plain
+# `docker.enabled = true`, with no environment variable to remember.
+#
+# The second fix is `procps`: the upstream images are python:3.9-slim based and
+# have no `ps`, which Nextflow needs to sample per-task CPU/RAM. Without it
+# every task logs "Failed to collect task metrics" and -with-trace / -with-report
+# resource columns come out empty.
+#
+# Everything else — the tool, its version, its dependencies — is inherited
+# unchanged from the image the Cell Maps team published.
+#
+# Build (see build.sh):
+#   docker build -f Dockerfile.upstream \
+#       --build-arg BASE=cm4ai/cellmaps_ppidownloader:0.2.2 \
+#       -t nf-cellmaps/ppidownloader:0.2.2 .
+# =============================================================================
+ARG BASE
+FROM ${BASE}
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Hand control back to Nextflow: it supplies the whole command line.
+ENTRYPOINT []
+CMD ["/bin/bash"]

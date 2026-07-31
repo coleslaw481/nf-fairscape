@@ -34,7 +34,10 @@ import spock.lang.Specification
  */
 class CrateArtifactsTest extends Specification {
 
-    static final Path FIXTURE = Path.of('examples/letters-chain/results')
+    // the COMMITTED crate, not `examples/letters-chain/results`: the example's own
+    // output is git-ignored along with every other crate, so pointing here is what
+    // makes these tests runnable on a fresh checkout (and therefore in CI).
+    static final Path FIXTURE = Path.of('src/test/resources/parity/letters-chain')
 
     private Path crateDir
 
@@ -57,8 +60,24 @@ class CrateArtifactsTest extends Specification {
         // the halves are terminal: nothing consumes them
         root[CrateArtifacts.EVI_OUTPUTS]*.get('@id').every { it.contains('half-txt') }
         root[CrateArtifacts.EVI_OUTPUTS].size() == 2
-        root[CrateArtifacts.EVI_INPUTS] == []
+        // the config copied in by `includeWorkflow` parameterizes the run and nothing
+        // produced it, so it entails as an input. `isPartOf` the workflow Software keeps
+        // it out of the outputs, which is the half that would otherwise grow without bound.
+        root[CrateArtifacts.EVI_INPUTS]*.get('@id').every { it.contains('nextflow-config') }
+        root[CrateArtifacts.EVI_INPUTS].size() == 1
         root['localEvidenceGraph'] == ['@id': 'provenance-graph.html']
+    }
+
+    def 'should leave no temp file beside the crate it rewrote'() {
+        // Each enrichment step rewrites the crate through a sibling .tmp. Where
+        // there is no atomic rename -- any object store -- the move falls back to
+        // a copy, so the temp must be removed explicitly or it gets published
+        // next to the crate.
+        when:
+        CrateArtifacts.generate(crateDir.resolve('ro-crate-metadata.json'), false, true, false, false)
+
+        then:
+        !Files.exists(crateDir.resolve('ro-crate-metadata.json.tmp'))
     }
 
     def 'should build an evidence graph rooted at the crate'() {
@@ -83,6 +102,28 @@ class CrateArtifactsTest extends Specification {
         final split = graph['@graph'][second['generatedBy']['@id']]
         split['name'] == 'SPLIT_HALVES'
         split['usedDataset']*.get('@id').any { it.contains('reversed-txt') }
+    }
+
+    def 'should not recurse forever on a crate some other tool made cyclic'() {
+        given: 'a crate where a computation both used and generated the same dataset'
+        final metadataFile = crateDir.resolve('ro-crate-metadata.json')
+        final crate = new JsonSlurper().parse(metadataFile.toFile()) as Map
+        final graph = crate['@graph'] as List<Map>
+        final computation = graph.find { node -> CrateJson.lastType(node).contains('Computation') && node['generated'] }
+        final generatedId = (computation['generated'] as List)[0]['@id']
+        computation['usedDataset'] = [['@id': generatedId]]
+        final dataset = graph.find { node -> node['@id'] == generatedId }
+        dataset['generatedBy'] = [['@id': computation['@id']]]
+        metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(crate))
+
+        when: 'the renderer never emits this, but a hand-edited crate can carry it'
+        CrateArtifacts.generate(metadataFile, false, true, false, false)
+
+        then: 'the walk stops at the back edge instead of dying on the stack'
+        Files.exists(crateDir.resolve('provenance-graph.json'))
+        final built = new JsonSlurper().parse(crateDir.resolve('provenance-graph.json').toFile())
+        built['@graph'].containsKey(generatedId)
+        built['@graph'].containsKey(computation['@id'])
     }
 
     def 'should render a self-contained evidence graph viewer'() {

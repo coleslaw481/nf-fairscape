@@ -18,8 +18,25 @@ def main():
 
     crate = ROCrateV1_2.model_validate(metadata)
 
-    # referential integrity: every @id reference must resolve within the graph
+    # ROCrateV1_2 accepts any graph its member models accept, so it does not by
+    # itself say WHICH profile the crate claims. Check the two declarations that
+    # make it an RO-Crate 1.2 and a FAIRSCAPE crate rather than generic JSON-LD.
     graph = json.load(open(sys.argv[1]))['@graph']
+    descriptor = next((n for n in graph if n['@id'] == 'ro-crate-metadata.json'), None)
+    if descriptor is None:
+        sys.exit("no ro-crate-metadata.json descriptor entity in the @graph")
+    conforms = descriptor.get('conformsTo') or {}
+    conforms = conforms.get('@id') if isinstance(conforms, dict) else conforms
+    if conforms != 'https://w3id.org/ro/crate/1.2':
+        sys.exit(f"descriptor conformsTo is {conforms!r}, expected the RO-Crate 1.2 profile")
+
+    root = next((n for n in graph if 'ROCrate' in str(n.get('@type'))), None)
+    if root is None:
+        sys.exit("no root ROCrate entity in the @graph")
+    if descriptor.get('about', {}).get('@id') != root['@id']:
+        sys.exit(f"descriptor is about {descriptor.get('about')}, not the root {root['@id']}")
+
+    # referential integrity: every @id reference must resolve within the graph
     ids = {node['@id'] for node in graph}
     dangling = []
     for node in graph:

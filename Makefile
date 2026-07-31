@@ -28,9 +28,24 @@ verify: install
 		&& nextflow run . -plugins nf-fairscape@$$(cat ../VERSION) \
 		&& PYTHONPATH=$(FAIRSCAPE_MODELS) python3 validate_crate.py results/ro-crate-metadata.json
 
-# Diff the Groovy datasheet/evidence-graph port against fairscape-cli's output
-# for a crate directory (needs fairscape-cli importable by python3)
-CRATE ?= examples/letters-chain/results
+# The parity suite: every artifact the port derives, diffed against the one
+# fairscape-cli derives from the same frozen crate. Needs fairscape-cli importable
+# by python3 (override the invocation with FAIRSCAPE_CLI=...). FAIRSCAPE_PARITY_REQUIRED
+# turns "the CLI is missing" from a skip into a failure, which is what CI wants --
+# `make test` alone lets the suite skip so it stays runnable without Python.
+parity-test:
+	FAIRSCAPE_PARITY_REQUIRED=1 ./gradlew test --tests 'nextflow.prov.parity.*'
+
+# Regenerate the frozen fixture crates the parity suite runs against (needs
+# nextflow and an installed plugin). Only after the RENDERER's output changes.
+fixtures: install
+	./tools/make-parity-fixtures.sh
+
+# Interactive form of the same comparison, pointed at ANY crate directory rather
+# than the fixtures -- use it on real pipeline output, it prints the diffs.
+# Defaults to a fixture so it runs on a fresh checkout; example output is
+# git-ignored, so `examples/letters-chain/results` only exists after you run it.
+CRATE ?= src/test/resources/parity/letters-chain
 parity:
 	./tools/parity.sh $(CRATE)
 
@@ -38,4 +53,4 @@ parity:
 release:
 	./gradlew releasePluginIfNotExists
 
-.PHONY: assemble clean test install verify parity release
+.PHONY: assemble clean test install verify parity parity-test fixtures release

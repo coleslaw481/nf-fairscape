@@ -1,0 +1,26 @@
+[
+    [
+        "r3",
+        "foo",
+        [
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r3.foo.1.txt",
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r3.foo.2.txt"
+        ]
+    ],
+    [
+        "r2",
+        "foo",
+        [
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r2.foo.1.txt",
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r2.foo.2.txt"
+        ]
+    ],
+    [
+        "r1",
+        "foo",
+        [
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r1.foo.1.txt",
+            "/tmp/claude-1000/-home-oj-fairscape/15c6ab6e-efa3-4701-85f9-c96c085cb42b/scratchpad/fixgen5/nf-test/results/script/r1.foo.2.txt"
+        ]
+    ]
+]

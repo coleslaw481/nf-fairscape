@@ -1,0 +1,589 @@
+{
+    "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#",
+        "rai": "http://mlcommons.org/croissant/RAI/",
+        "prov": "http://www.w3.org/ns/prov#"
+    },
+    "@graph": [
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "conformsTo": {
+                "@id": "https://w3id.org/ro/crate/1.2"
+            },
+            "about": {
+                "@id": "ark:59853/rocrate-fanout"
+            }
+        },
+        {
+            "@id": "ark:59853/rocrate-fanout",
+            "@type": [
+                "Dataset",
+                "https://w3id.org/EVI#ROCrate"
+            ],
+            "conformsTo": {
+                "@id": "https://w3id.org/fairscape/profile/0.1"
+            },
+            "name": "fan-out crate",
+            "description": "A scatter/gather workflow crate used to exercise condensation.",
+            "keywords": [
+                "nextflow",
+                "scatter"
+            ],
+            "version": "1.0",
+            "author": "Test",
+            "license": "https://spdx.org/licenses/Apache-2.0",
+            "datePublished": "2026-07-24T00:00:00-04:00",
+            "publisher": "Test Org",
+            "hasPart": [
+                {
+                    "@id": "ark:59853/software-split"
+                },
+                {
+                    "@id": "ark:59853/software-merge"
+                },
+                {
+                    "@id": "ark:59853/dataset-seed"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-0"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-0"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-1"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-1"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-2"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-2"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-3"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-3"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-4"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-4"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-5"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-5"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-6"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-6"
+                },
+                {
+                    "@id": "ark:59853/computation-shard-7"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-7"
+                },
+                {
+                    "@id": "ark:59853/computation-merge"
+                },
+                {
+                    "@id": "ark:59853/dataset-merged"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-split",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "splitter",
+            "description": "Splits the seed file into shards for the scatter step.",
+            "format": "bash",
+            "author": "Test",
+            "version": "1.0",
+            "dateModified": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ]
+        },
+        {
+            "@id": "ark:59853/software-merge",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "merger",
+            "description": "Merges every shard back into a single result file.",
+            "format": "bash",
+            "author": "Test",
+            "version": "1.0",
+            "dateModified": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-seed",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "seed.txt",
+            "description": "Seed input consumed by every scatter shard.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10"
+        },
+        {
+            "@id": "ark:59853/computation-shard-0",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_0",
+            "description": "Nextflow task 'SHARD_0' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 0",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-0"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-0",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_0.txt",
+            "description": "Shard 0 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-0"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-1",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_1",
+            "description": "Nextflow task 'SHARD_1' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 1",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-1"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-1",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_1.txt",
+            "description": "Shard 1 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-1"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-2",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_2",
+            "description": "Nextflow task 'SHARD_2' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 2",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-2"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-2",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_2.txt",
+            "description": "Shard 2 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-2"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-3",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_3",
+            "description": "Nextflow task 'SHARD_3' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 3",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-3"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-3",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_3.txt",
+            "description": "Shard 3 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-3"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-4",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_4",
+            "description": "Nextflow task 'SHARD_4' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 4",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-4"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-4",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_4.txt",
+            "description": "Shard 4 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-4"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-5",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_5",
+            "description": "Nextflow task 'SHARD_5' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 5",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-5"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-5",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_5.txt",
+            "description": "Shard 5 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-5"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-6",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_6",
+            "description": "Nextflow task 'SHARD_6' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 6",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-6"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-6",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_6.txt",
+            "description": "Shard 6 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-6"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-shard-7",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SHARD_7",
+            "description": "Nextflow task 'SHARD_7' (process SHARD)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "split 7",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-seed"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-shard-7"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-shard-7",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "shard_7.txt",
+            "description": "Shard 7 produced by the scatter step.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "10",
+            "generatedBy": {
+                "@id": "ark:59853/computation-shard-7"
+            }
+        },
+        {
+            "@id": "ark:59853/computation-merge",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "MERGE",
+            "description": "Nextflow task 'MERGE' (process MERGE)",
+            "runBy": "Test",
+            "dateCreated": "2026-07-24",
+            "command": "cat shards",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-merge"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-shard-0"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-1"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-2"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-3"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-4"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-5"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-6"
+                },
+                {
+                    "@id": "ark:59853/dataset-shard-7"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-merged"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-merged",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "merged.txt",
+            "description": "Final merged result of the scatter/gather run.",
+            "format": "txt",
+            "author": "Test",
+            "datePublished": "2026-07-24",
+            "keywords": [
+                "nextflow"
+            ],
+            "contentSize": "80",
+            "generatedBy": {
+                "@id": "ark:59853/computation-merge"
+            }
+        }
+    ]
+}

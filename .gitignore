@@ -1,13 +1,43 @@
-# Ignore Gradle project-specific cache directory
+# Gradle / IDE
 .gradle
 .idea
-.nextflow*
 gradle.properties
-
-# Ignore Gradle build output directory
 build
-work
-results
 
 # VSCode/Eclipse Java extension output (mirrors src/ as stale copies)
 bin/
+
+# Nextflow run state
+.nextflow*
+work
+nf.out
+
+# examples/nf-core/run.sh working files: the pipeline directories it creates (each holding a
+# git-ignored results/ and work/), and the empty Docker config it falls back to when the
+# user's config.json names a credential helper that is not installed
+examples/nf-core/.docker
+
+# Nextflow run outputs. The examples ship workflow definitions and configs only,
+# so anyone can run them and get their own crate — the crates themselves, and the
+# datasheet/provenance-graph/score artifacts derived from them, stay out of git.
+results
+nf_results*
+ro-crate-metadata.json
+ro-crate-datasheet.html
+ro-crate-preview.html
+ro-crate-linkml.yaml
+provenance-graph.json
+provenance-graph.html
+ai_ready_score.json
+
+# -with-report / -with-timeline / SLURM head-job logs
+*-report-*.html
+*-timeline-*.html
+*-nf-*.log
+
+# ...but the parity fixtures ARE crates, and they are the suite's input. They
+# match `results`, `ro-crate-metadata.json` and friends above, so re-include the
+# whole tree -- a fixture silently swallowed by those rules is a CI job that
+# passes having compared nothing. Regenerate with tools/make-parity-fixtures.sh.
+!src/test/resources/parity/
+!src/test/resources/parity/**

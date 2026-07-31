@@ -1,0 +1,477 @@
+{
+    "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#",
+        "rai": "http://mlcommons.org/croissant/RAI/",
+        "prov": "http://www.w3.org/ns/prov#",
+        "usedSoftware": {
+            "@id": "https://w3id.org/EVI#usedSoftware",
+            "@type": "@id"
+        },
+        "usedDataset": {
+            "@id": "https://w3id.org/EVI#usedDataset",
+            "@type": "@id"
+        },
+        "generatedBy": {
+            "@id": "https://w3id.org/EVI#generatedBy",
+            "@type": "@id"
+        },
+        "generated": {
+            "@id": "https://w3id.org/EVI#generated",
+            "@type": "@id"
+        },
+        "annotates": {
+            "@id": "https://w3id.org/EVI#annotates",
+            "@type": "@id"
+        },
+        "hasDistribution": {
+            "@id": "https://w3id.org/EVI#hasDistribution",
+            "@type": "@id"
+        },
+        "localPath": "https://w3id.org/ro/terms#localPath"
+    },
+    "@graph": [
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "conformsTo": {
+                "@id": "https://w3id.org/ro/crate/1.2"
+            },
+            "about": {
+                "@id": "ark:59853/rocrate-main-nf-96afc15"
+            }
+        },
+        {
+            "@id": "ark:59853/rocrate-main-nf-96afc15",
+            "@type": [
+                "Dataset",
+                "https://w3id.org/EVI#ROCrate"
+            ],
+            "conformsTo": {
+                "@id": "https://w3id.org/fairscape/profile/0.1"
+            },
+            "name": "letters-chain demonstration crate",
+            "description": "A three-step demonstration pipeline that builds a letter list, reverses it, and splits it in half \u2014 a full provenance chain packaged as a FAIRSCAPE EVI RO-Crate.",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "version": "1.0",
+            "author": "Ada Lovelace",
+            "license": "https://spdx.org/licenses/CC-BY-4.0",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "publisher": "Analytical Engine Institute",
+            "hasPart": [
+                {
+                    "@id": "ark:59853/computation-main-nf-2dc6dbc"
+                },
+                {
+                    "@id": "ark:59853/computation-make-list-82acbdc"
+                },
+                {
+                    "@id": "ark:59853/computation-reverse-a558884"
+                },
+                {
+                    "@id": "ark:59853/computation-split-halves-6bd3d08"
+                },
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                },
+                {
+                    "@id": "ark:59853/software-nextflow-1026e1d"
+                },
+                {
+                    "@id": "ark:59853/software-make-list-5d822d8"
+                },
+                {
+                    "@id": "ark:59853/software-reverse-d16d0f4"
+                },
+                {
+                    "@id": "ark:59853/software-split-halves-d152d3d"
+                },
+                {
+                    "@id": "ark:59853/dataset-letters-txt-ba74d02"
+                },
+                {
+                    "@id": "ark:59853/dataset-reversed-txt-ca77532"
+                },
+                {
+                    "@id": "ark:59853/dataset-first-half-txt-0c71d8d"
+                },
+                {
+                    "@id": "ark:59853/dataset-second-half-txt-aa9ba46"
+                },
+                {
+                    "@id": "ark:59853/dataset-nextflow-config-f03699b"
+                }
+            ],
+            "principalInvestigator": "Ada Lovelace",
+            "funder": "Example Research Program (grant #0000000)",
+            "associatedPublication": "https://doi.org/10.1000/example-letters-chain",
+            "citation": "Lovelace A. The letters-chain demonstration pipeline. 2026.",
+            "contactEmail": "ada@example.org",
+            "conditionsOfAccess": "Example crate for demonstration purposes; no access restrictions.",
+            "copyrightNotice": "Copyright (c) 2026 Analytical Engine Institute."
+        },
+        {
+            "@id": "ark:59853/computation-main-nf-2dc6dbc",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "Nextflow workflow run of 'main.nf'",
+            "description": "Execution of the Nextflow workflow 'main.nf' (session 6fafb488-bf12-46da-866a-aa1b8167d646)",
+            "runBy": "Ada Lovelace",
+            "dateCreated": "2026-07-31T09:36:33.681122066-04:00",
+            "command": "nextflow run . -plugins nf-fairscape@0.1.0",
+            "parameter": [
+                "n: 8"
+            ],
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                },
+                {
+                    "@id": "ark:59853/software-nextflow-1026e1d"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-letters-txt-ba74d02"
+                },
+                {
+                    "@id": "ark:59853/dataset-reversed-txt-ca77532"
+                },
+                {
+                    "@id": "ark:59853/dataset-first-half-txt-0c71d8d"
+                },
+                {
+                    "@id": "ark:59853/dataset-second-half-txt-aa9ba46"
+                }
+            ],
+            "startTime": "2026-07-31T09:36:33.681122066-04:00",
+            "endTime": "2026-07-31T09:36:34.448426782-04:00",
+            "nextflowVersion": "25.10.4",
+            "identifier": "6fafb488-bf12-46da-866a-aa1b8167d646"
+        },
+        {
+            "@id": "ark:59853/computation-make-list-82acbdc",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "MAKE_LIST",
+            "description": "Nextflow task 'MAKE_LIST' (process MAKE_LIST)",
+            "runBy": "Ada Lovelace",
+            "dateCreated": "2026-07-31T09:36:33.681122066-04:00",
+            "command": "printf '%s\\n' {a..z} | head -n 8 > letters.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-make-list-5d822d8"
+                }
+            ],
+            "usedDataset": [
+                
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-letters-txt-ba74d02"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-main-nf-2dc6dbc"
+                }
+            ],
+            "identifier": "da3064e977fc148800b6117ccccdf8eb"
+        },
+        {
+            "@id": "ark:59853/computation-reverse-a558884",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "REVERSE",
+            "description": "Nextflow task 'REVERSE' (process REVERSE)",
+            "runBy": "Ada Lovelace",
+            "dateCreated": "2026-07-31T09:36:33.681122066-04:00",
+            "command": "tac letters.txt > reversed.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-reverse-d16d0f4"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-letters-txt-ba74d02"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-reversed-txt-ca77532"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-main-nf-2dc6dbc"
+                }
+            ],
+            "identifier": "90a2ccb55c15251a6137e0fbaeb315fb"
+        },
+        {
+            "@id": "ark:59853/computation-split-halves-6bd3d08",
+            "@type": [
+                "prov:Activity",
+                "https://w3id.org/EVI#Computation"
+            ],
+            "name": "SPLIT_HALVES",
+            "description": "Nextflow task 'SPLIT_HALVES' (process SPLIT_HALVES)",
+            "runBy": "Ada Lovelace",
+            "dateCreated": "2026-07-31T09:36:33.681122066-04:00",
+            "command": "lines=$(wc -l < reversed.txt)\n    half=$(( (lines + 1) / 2 ))\n    head -n $half reversed.txt > first_half.txt\n    tail -n +$(( half + 1 )) reversed.txt > second_half.txt",
+            "usedSoftware": [
+                {
+                    "@id": "ark:59853/software-split-halves-d152d3d"
+                }
+            ],
+            "usedDataset": [
+                {
+                    "@id": "ark:59853/dataset-reversed-txt-ca77532"
+                }
+            ],
+            "generated": [
+                {
+                    "@id": "ark:59853/dataset-first-half-txt-0c71d8d"
+                },
+                {
+                    "@id": "ark:59853/dataset-second-half-txt-aa9ba46"
+                }
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/computation-main-nf-2dc6dbc"
+                }
+            ],
+            "identifier": "e37ca325019cb665c93f883e9fb6e306"
+        },
+        {
+            "@id": "ark:59853/software-main-nf-9a2a8ab",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "main.nf",
+            "author": "Ada Lovelace",
+            "description": "Nextflow workflow script for the run 'main.nf'",
+            "format": "nextflow",
+            "contentUrl": "workflow/main.nf"
+        },
+        {
+            "@id": "ark:59853/software-nextflow-1026e1d",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "Nextflow",
+            "author": "Seqera Labs",
+            "description": "Nextflow workflow management system (https://www.nextflow.io/)",
+            "format": "application/java-archive",
+            "version": "25.10.4",
+            "contentUrl": "https://github.com/nextflow-io/nextflow"
+        },
+        {
+            "@id": "ark:59853/software-make-list-5d822d8",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "head",
+            "author": "David MacKenzie, Jim Meyering (GNU coreutils)",
+            "description": "GNU coreutils head \u2014 here it takes the first n lines of a bash-generated a-to-z sequence to build the letter list.",
+            "format": "nextflow",
+            "version": "8.32",
+            "contentUrl": "https://www.gnu.org/software/coreutils/head",
+            "keywords": [
+                "coreutils",
+                "text-processing"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-reverse-d16d0f4",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "tac",
+            "author": "Jay Lepreau, David MacKenzie (GNU coreutils)",
+            "description": "GNU coreutils tac \u2014 a command-line utility that reverses the order of lines in a text file.",
+            "format": "nextflow",
+            "version": "8.32",
+            "contentUrl": "https://www.gnu.org/software/coreutils/tac",
+            "keywords": [
+                "coreutils",
+                "text-processing"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/software-split-halves-d152d3d",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Software"
+            ],
+            "name": "GNU coreutils (wc, head, tail)",
+            "author": "GNU coreutils authors (wc: Paul Rubin, David MacKenzie)",
+            "description": "GNU coreutils text utilities \u2014 wc counts the lines, then head and tail split the reversed list into a first and second half.",
+            "format": "nextflow",
+            "version": "8.32",
+            "contentUrl": "https://www.gnu.org/software/coreutils/",
+            "keywords": [
+                "coreutils",
+                "text-processing",
+                "partitioning"
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                }
+            ]
+        },
+        {
+            "@id": "ark:59853/dataset-letters-txt-ba74d02",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "letters.txt",
+            "author": "Ada Lovelace",
+            "description": "File 'letters.txt' produced by the Nextflow workflow run 'main.nf'",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-make-list-82acbdc"
+                }
+            ],
+            "contentUrl": "letters.txt",
+            "contentSize": "16"
+        },
+        {
+            "@id": "ark:59853/dataset-reversed-txt-ca77532",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "reversed.txt",
+            "author": "Ada Lovelace",
+            "description": "File 'reversed.txt' produced by the Nextflow workflow run 'main.nf'",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-reverse-a558884"
+                }
+            ],
+            "contentUrl": "reversed.txt",
+            "contentSize": "16"
+        },
+        {
+            "@id": "ark:59853/dataset-first-half-txt-0c71d8d",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "first_half.txt",
+            "author": "Ada Lovelace",
+            "description": "File 'first_half.txt' produced by the Nextflow workflow run 'main.nf'",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-split-halves-6bd3d08"
+                }
+            ],
+            "contentUrl": "first_half.txt",
+            "contentSize": "8"
+        },
+        {
+            "@id": "ark:59853/dataset-second-half-txt-aa9ba46",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "second_half.txt",
+            "author": "Ada Lovelace",
+            "description": "File 'second_half.txt' produced by the Nextflow workflow run 'main.nf'",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "format": "text/plain",
+            "generatedBy": [
+                {
+                    "@id": "ark:59853/computation-split-halves-6bd3d08"
+                }
+            ],
+            "contentUrl": "second_half.txt",
+            "contentSize": "8"
+        },
+        {
+            "@id": "ark:59853/dataset-nextflow-config-f03699b",
+            "@type": [
+                "prov:Entity",
+                "https://w3id.org/EVI#Dataset"
+            ],
+            "name": "nextflow.config",
+            "author": "Ada Lovelace",
+            "description": "Nextflow configuration file 'nextflow.config' for the run 'main.nf'",
+            "datePublished": "2026-07-31T09:36:34.448426782-04:00",
+            "keywords": [
+                "example",
+                "letters-chain",
+                "coreutils"
+            ],
+            "format": "nextflow-config",
+            "generatedBy": [
+                
+            ],
+            "isPartOf": [
+                {
+                    "@id": "ark:59853/software-main-nf-9a2a8ab"
+                }
+            ],
+            "contentUrl": "workflow/nextflow.config",
+            "contentSize": "1497"
+        }
+    ]
+}

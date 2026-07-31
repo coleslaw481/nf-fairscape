@@ -104,6 +104,12 @@ class TabularSchemaInferrer {
 
     static final Set<String> SUPPORTED_EXTENSIONS = ['csv', 'tsv'] as Set
 
+    /** The comment introducer skipped by default; '' skips nothing, as the CLI does. */
+    static final String DEFAULT_COMMENT_CHAR = '#'
+
+    /** How deep a comment preamble may run before we stop looking for a header. */
+    static final int MAX_COMMENT_LINES = 50
+
     /** True when this file's extension is one the inferrer can describe. */
     static boolean supports(Path file) {
         return extensionOf(file) in SUPPORTED_EXTENSIONS
@@ -129,14 +135,21 @@ class TabularSchemaInferrer {
      *                       CM4AI embedding schemas use. 0 disables the collapse.
      */
     static Map infer(Path file, String guid, String name, String description,
-                     int sampleSize = DEFAULT_SAMPLE_SIZE, int arrayThreshold = 0) {
+                     int sampleSize = DEFAULT_SAMPLE_SIZE, int arrayThreshold = 0,
+                     String commentChar = DEFAULT_COMMENT_CHAR) {
 
         final ext = extensionOf(file)
         if( !(ext in SUPPORTED_EXTENSIONS) )
             throw new IllegalArgumentException("Unsupported file extension '${ext}' for schema inference")
 
         final separator = ext == 'tsv' ? '\t' : ','
-        final records = readRecords(file, separator as char, sampleSize + 1)
+        // read the comment allowance on top of the sample so a preamble does not
+        // eat into the rows the type detection gets to see, then cut back to the
+        // sample size frictionless would have used
+        List<List<String>> records = dropComments(
+            readRecords(file, separator as char, sampleSize + 1 + MAX_COMMENT_LINES), commentChar)
+        if( records.size() > sampleSize + 1 )
+            records = records.subList(0, sampleSize + 1)
 
         final labels = records ? records[0] : []
         final fragment = records.size() > 1 ? records[1..-1] : []
@@ -168,6 +181,38 @@ class TabularSchemaInferrer {
             'EVI:schemaType'   : 'tabular',
             'description'      : description,
         ]
+    }
+
+    /**
+     * Drop a leading comment preamble so the header is the real header. MultiQC
+     * custom-content tables open with `# id: '...'` lines, and taking the first
+     * of those as the header describes the file as one column named after a
+     * comment — metadata that is worse than none.
+     *
+     * A leading record counts as a comment when its first field starts with the
+     * comment character AND it does not split into the same number of fields as
+     * the record after it: `#chrom<TAB>start<TAB>end` above tab-separated data is
+     * a header written in the BED style, not a comment, and stays.
+     *
+     * @param records     the parsed records, header first
+     * @param commentChar the comment introducer, or null/'' to drop nothing
+     */
+    static List<List<String>> dropComments(List<List<String>> records, String commentChar) {
+        if( !commentChar || !records )
+            return records
+
+        int start = 0
+        final limit = Math.min(records.size(), MAX_COMMENT_LINES)
+        while( start < limit ) {
+            final record = records[start]
+            if( !record || !(record[0] as String)?.startsWith(commentChar) )
+                break
+            final next = start + 1 < records.size() ? records[start + 1] : null
+            if( next != null && record.size() > 1 && record.size() == next.size() )
+                break
+            start++
+        }
+        return start == 0 ? records : records.subList(start, records.size())
     }
 
     /** One canonical Property, with the frictionless type kept when the map is lossy. */

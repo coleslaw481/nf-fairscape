@@ -315,16 +315,23 @@ Datasets, then root + descriptor:
 - **Process Software** — one per process (e.g. `REVERSE`), `isPartOf` → the
   workflow-script Software, `contentUrl` = the file defining the process (found
   via Nextflow's `ScriptMeta`, so it points at the module file in modular
-  pipelines). Only the *run* Computation references the whole script + engine.
+  pipelines). When that file is one `includeWorkflow` copied into the crate, the
+  copy is the locator — a process declared in `main.nf` says `workflow/main.nf`.
+  Only the *run* Computation references the whole script + engine.
 - **Run Computation** — the whole run: launch `command`, params folded to
   `"name: value"` strings (`foldParams()`), external inputs, all published outputs,
   `startTime`/`endTime` as extras.
 - **Dataset** — one per unique file. `generatedBy` points back at the producing
   Computation (the **inverse** of that Computation's `generated` — both directions
   are written, matching the LakeDB fixture in fairscape_models). `contentUrl` is
-  crate-relative for published files, a normalized absolute path or original URL
-  otherwise (remote inputs keep their https URL — `PathNormalizer`, a Nextflow
-  utility class, does that translation).
+  crate-relative for published files, and an absolute URI for things that live
+  elsewhere but can still be fetched — a pipeline asset keeps its pinned GitHub URL
+  and a remote input its `https`/`s3` one (`PathNormalizer`, a Nextflow utility
+  class, does that translation). A file that is *neither* in the crate nor
+  fetchable — a work-directory intermediate — gets
+  [`localPath`](FAIRSCAPE.md#where-a-datasets-bytes-are-contenturl-vs-localpath)
+  and no `contentUrl`, because a relative `contentUrl` would be claiming it sits
+  inside the crate when it does not.
 - **Root** — `@type ["Dataset", EVI#ROCrate]`, `conformsTo` the FAIRSCAPE profile,
   `hasPart` listing *every* node above.
 

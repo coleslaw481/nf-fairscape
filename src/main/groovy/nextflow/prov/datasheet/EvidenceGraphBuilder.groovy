@@ -235,11 +235,34 @@ class EvidenceGraphBuilder {
         return ids
     }
 
-    /** _build_node_from_cache: project one node and everything upstream of it. */
+    /**
+     * _build_node_from_cache: project one node and everything upstream of it.
+     *
+     * `graphDict` is only written once a node's whole subtree is projected — the
+     * order it ends up in is what the CLI produces, and provenance-graph.json is
+     * compared against the CLI byte for byte — so a back-edge would re-enter a
+     * node that is still in flight and recurse until the stack dies. `inFlight`
+     * stops that without touching the insertion order: on the DAG the renderer
+     * emits it never triggers, and on a graph some other tool made cyclic the
+     * cycle is simply not followed. {@link GraphCondenser#signature} guards
+     * itself the same way.
+     */
     private static void projectNode(String nodeId, Map nodeCache, Map graphDict,
-                                    String startRoCrateId, List roCrateOutputs) {
-        if( graphDict.containsKey(nodeId) )
+                                    String startRoCrateId, List roCrateOutputs,
+                                    Set<String> inFlight = new HashSet<String>()) {
+        if( graphDict.containsKey(nodeId) || !inFlight.add(nodeId) )
             return
+        try {
+            projectNode0(nodeId, nodeCache, graphDict, startRoCrateId, roCrateOutputs, inFlight)
+        }
+        finally {
+            inFlight.remove(nodeId)
+        }
+    }
+
+    private static void projectNode0(String nodeId, Map nodeCache, Map graphDict,
+                                     String startRoCrateId, List roCrateOutputs,
+                                     Set<String> inFlight) {
 
         final node = nodeCache[nodeId] as Map
         if( node == null ) {
@@ -278,7 +301,7 @@ class EvidenceGraphBuilder {
                     compId = generatedBy['@id']
 
                 if( compId ) {
-                    projectNode(compId, nodeCache, graphDict, startRoCrateId, roCrateOutputs)
+                    projectNode(compId, nodeCache, graphDict, startRoCrateId, roCrateOutputs, inFlight)
                     result['generatedBy'] = ['@id': compId]
                 }
                 else {
@@ -293,7 +316,7 @@ class EvidenceGraphBuilder {
                 if( refs ) {
                     result['usedDataset'] = refs
                     for( final ref : refs )
-                        projectNode(ref['@id'] as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs)
+                        projectNode(ref['@id'] as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs, inFlight)
                 }
             }
 
@@ -305,7 +328,7 @@ class EvidenceGraphBuilder {
                 for( final item : CrateJson.asList(value) ) {
                     final id = (item instanceof Map) ? item['@id'] : null
                     if( id ) {
-                        projectNode(id as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs)
+                        projectNode(id as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs, inFlight)
                         refs << ['@id': id]
                     }
                 }
@@ -324,7 +347,7 @@ class EvidenceGraphBuilder {
             final rep = node['evi:representativeDataset']
             final repId = rep instanceof Map ? rep['@id'] : (rep instanceof CharSequence ? rep.toString() : null)
             if( repId )
-                projectNode(repId as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs)
+                projectNode(repId as String, nodeCache, graphDict, startRoCrateId, roCrateOutputs, inFlight)
         }
 
         graphDict[nodeId] = result

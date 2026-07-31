@@ -1,27 +1,30 @@
+# Build + unit tests. Deliberately no Python and no Nextflow: this job answers
+# "does the plugin compile and do its own tests pass", nothing else.
+#
+# The parity suite (nextflow.prov.parity) SKIPS here, because fairscape-cli is not
+# installed -- by design, so `make test` stays runnable without a Python
+# environment. It runs for real in parity.yml. The end-to-end pipeline run and
+# RO-Crate 1.2 validation moved to crate.yml.
 name: nf-fairscape CI
+
 on:
   push:
-    branches:
-      - 'main'
   pull_request:
     types: [opened, reopened, synchronize]
   workflow_dispatch:
+
 jobs:
   build:
     name: Build nf-fairscape
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         java_version: [17]
-        nextflow_version: ['25.10']
 
     steps:
-      - name: Environment
-        run: env | sort
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -34,27 +37,22 @@ jobs:
         with:
           java-version: ${{matrix.java_version}}
           distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Unit tests
         run: make test
         env:
           GRADLE_OPTS: '-Dorg.gradle.daemon=false'
 
-      - name: Setup Nextflow ${{ matrix.nextflow_version }}
-        uses: nf-core/setup-nextflow@b9f764e8ba5c76b712ace14ecbfcef0e40ae2dd8 # v1
+      - name: Assemble the plugin
+        run: make assemble
+        env:
+          GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          version: "${{ matrix.nextflow_version }}"
-
-      - name: Install
-        run: make install
-
-      - name: Test
-        run: nextflow run nf-fairscape-test/ -plugins nf-fairscape@$(cat VERSION)
-
-      # the acceptance oracle: the emitted crate must validate against
-      # fairscape_models and contain no dangling ARK references
-      # (results/ is relative to the launch dir, which here is the repo root)
-      - name: Validate crate
-        run: |
-          python3 -m pip install --quiet fairscape-models
-          python3 nf-fairscape-test/validate_crate.py results/ro-crate-metadata.json
+          name: unit-test-report
+          path: build/reports/tests/test
+          retention-days: 14

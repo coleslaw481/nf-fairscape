@@ -1,0 +1,39 @@
+# =============================================================================
+# cellmaps_generate_hierarchy — built here because upstream has no amd64 image
+# =============================================================================
+# cm4ai/cellmaps_generate_hierarchy has exactly one tag, 0.3.0.post1, and its
+# manifest lists linux/arm64 only. There is no amd64 image for the hierarchy
+# step at all, so on an x86_64 host this is the one stage that has to be built
+# locally no matter what.
+#
+# Pinned to 0.2.5 — the version this pipeline has been validated against and
+# the one main.nf declares to nf-fairscape. 0.3.0.post1 is on PyPI if you want
+# to track the (arm64) upstream image; change VERSIONS in nextflow.config,
+# which drives the tag and the provenance together.
+#
+# hidef is a real dependency, not an optional one: the tool shells out to
+# `hidef_finder.py` (hierarchy.py `_run_hidef`). It comes in via the package's
+# own requirements, along with leidenalg and cdapsutil. Note that despite the
+# name, cdapsutil runs in ExternalResultsRunner mode here — it reads a local
+# CDAPS JSON file and does NOT need a Docker daemon inside this container, so
+# there is no docker-in-docker problem to solve.
+#
+# Build: docker build -f Dockerfile.hierarchy -t nf-cellmaps/generate_hierarchy:0.2.5 .
+# =============================================================================
+FROM python:3.9-slim-trixie
+
+ARG TOOL_VERSION=0.2.5
+
+# procps for Nextflow task metrics; build-essential + cmake because leidenalg
+# and python-igraph build from source when no cp39 wheel matches trixie.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps build-essential cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir cellmaps_generate_hierarchy==${TOOL_VERSION}
+
+# Fail the build, not the pipeline, if the hidef entry point did not land.
+RUN command -v hidef_finder.py
+
+ENTRYPOINT []
+CMD ["/bin/bash"]
