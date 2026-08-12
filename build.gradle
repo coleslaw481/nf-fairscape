@@ -1,6 +1,6 @@
 
 plugins {
-    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.12'
+    id 'io.nextflow.nextflow-plugin' version '1.0.0-beta.15'
 }
 
 version = project.file('VERSION').text.trim()
@@ -8,17 +8,16 @@ version = project.file('VERSION').text.trim()
 nextflowPlugin {
     nextflowVersion = '25.10.0'
 
-    provider = 'nextflow'
+    provider = 'fairscape'
     className = 'nextflow.prov.ProvPlugin'
+    // Shown next to the plugin name in the registry listing.
+    description = 'Writes a FAIRSCAPE EVI RO-Crate describing every Nextflow pipeline run'
     extensionPoints = [
         'nextflow.prov.FairscapeConfig',
         'nextflow.prov.ProvObserverFactory'
     ]
 }
 
-// `tools/parity.sh` drives CrateArtifactsTest against a prepared crate directory
-// to diff the datasheet/evidence-graph output against fairscape-cli's. Forward
-// its properties into the test JVM and always re-run when it is in play.
 tasks.withType(Test).configureEach {
     final parityDir = System.getProperty('parityDir')
     if( parityDir ) {

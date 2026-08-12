@@ -29,7 +29,7 @@ plugins { id 'nf-fairscape@0.1.0' }
 ```
 
 Until the first registry release lands, build and install it locally instead — same
-result, one extra step ([docs/PUBLISHING.md](docs/PUBLISHING.md)):
+result, one extra step ([CONTRIBUTING.md](CONTRIBUTING.md)):
 
 ```bash
 make install

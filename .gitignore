@@ -41,3 +41,9 @@ ai_ready_score.json
 # passes having compared nothing. Regenerate with tools/make-parity-fixtures.sh.
 !src/test/resources/parity/
 !src/test/resources/parity/**
+
+# Maintainer-only notes. Useful to keep on disk, noise for anyone reading the
+# repo -- the README and CONTRIBUTING.md are the intended entry points.
+CLAUDE.md
+CHANGELOG.md
+docs/PUBLISHING.md

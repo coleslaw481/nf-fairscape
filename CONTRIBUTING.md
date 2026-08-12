@@ -18,18 +18,18 @@ nextflow run nf-fairscape-test -plugins nf-fairscape@<version>
 
 ## Publishing
 
-Full procedure, including the one-time registry claim and API token setup:
-**[docs/PUBLISHING.md](./docs/PUBLISHING.md)**. Once that is done, each release is:
+The plugin is published to the [Nextflow plugin registry](https://registry.nextflow.io).
+Publishing rights are a one-time ownership claim on the plugin name, plus an API token
+in `$HOME/.gradle/gradle.properties` as `npr.apiKey=<api-key>`. After that, each release
+is:
 
 1. Run the gates: `make test`, `make parity-test`, `make verify`.
 
 2. Update the [version file](./VERSION).
 
-3. Update the [changelog](./CHANGELOG.md).
-
-4. Run `make release` to build and publish the plugin. Registry versions are
+3. Run `make release` to build and publish the plugin. Registry versions are
    immutable — `releasePluginIfNotExists` skips a version that already exists, so
    bump rather than re-cut.
 
-5. Tag the commit and make a
+4. Tag the commit and make a
    [GitHub release](https://github.com/fairscape/nf-fairscape/releases).

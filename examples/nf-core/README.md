@@ -2,8 +2,9 @@
 
 The other examples are pipelines written to show one feature. These are **real released
 [nf-core](https://nf-co.re) pipelines**, run unmodified, with nothing added but a `-c` config
-that switches the plugin on. Every bug in the "Hardened against real nf-core pipelines"
-section of `CLAUDE.md` was found by running one of them.
+that switches the plugin on. Every bug the plugin has been hardened against — cyclic
+provenance graphs, wrong tool versions, invisible samplesheets, colliding identifiers —
+was found by running one of them.
 
 Nothing here is written by us. `run.sh` fetches each pipeline from GitHub the way you would run
 it yourself, and copies its `main.nf` and `nextflow.config` in afterwards so the crate can be
