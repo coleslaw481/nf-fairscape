@@ -1,0 +1,24 @@
+nf-fairscape
+Copyright 2026 The FAIRSCAPE project
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product is a modified fork of nf-prov v1.7.0
+(https://github.com/nextflow-io/nf-prov), Copyright Seqera Labs, licensed
+under the Apache License, Version 2.0.
+
+Retained from nf-prov, with modifications: the plugin entry point, the
+observer/renderer framework and the `nextflow.prov` package layout
+(ProvPlugin, ProvObserver, ProvObserverFactory, Renderer, FairscapeConfig)
+and util/ProvHelper.groovy, which is unchanged. Those files carry the
+original Seqera Labs copyright header.
+
+Everything else is new work: the FAIRSCAPE EVI renderer
+(renderers/FairscapeRenderer.groovy) and the packages under
+nextflow.prov.datasheet, nextflow.prov.schema and nextflow.prov.util.
+
+The datasheet, evidence-graph, LinkML/D4D and tabular-schema-inference code
+is a Groovy port of fairscape-cli (https://github.com/fairscape/fairscape-cli)
+and fairscape_models, also Apache-2.0. HTML templates under
+src/main/resources/fairscape/templates/ are verbatim copies from
+fairscape-cli.

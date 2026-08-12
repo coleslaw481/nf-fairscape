@@ -18,12 +18,18 @@ nextflow run nf-fairscape-test -plugins nf-fairscape@<version>
 
 ## Publishing
 
-Follow these steps to package, upload, and publish the plugin:
+Full procedure, including the one-time registry claim and API token setup:
+**[docs/PUBLISHING.md](./docs/PUBLISHING.md)**. Once that is done, each release is:
 
-1. Update the [version file](./VERSION).
+1. Run the gates: `make test`, `make parity-test`, `make verify`.
 
-2. Update the [changelog](./CHANGELOG.md).
+2. Update the [version file](./VERSION).
 
-3. Run `make release` to build and publish the plugin.
+3. Update the [changelog](./CHANGELOG.md).
 
-4. Make a [GitHub release](https://github.com/fairscape/nf-fairscape/releases).
+4. Run `make release` to build and publish the plugin. Registry versions are
+   immutable — `releasePluginIfNotExists` skips a version that already exists, so
+   bump rather than re-cut.
+
+5. Tag the commit and make a
+   [GitHub release](https://github.com/fairscape/nf-fairscape/releases).

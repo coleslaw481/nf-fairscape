@@ -12,7 +12,7 @@ docker run -d --name nf-minio -p 9000:9000 \
     quay.io/minio/minio:latest server /data
 
 export AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin
-aws --endpoint-url http://localhost:9000 s3 mb s3://nf-prov
+aws --endpoint-url http://localhost:9000 s3 mb s3://nf-fairscape
 
 make install          # from the repo root
 cd examples/s3-minio && nextflow run main.nf
@@ -21,7 +21,7 @@ cd examples/s3-minio && nextflow run main.nf
 Then look at what landed:
 
 ```bash
-aws --endpoint-url http://localhost:9000 s3 ls --recursive s3://nf-prov/results/
+aws --endpoint-url http://localhost:9000 s3 ls --recursive s3://nf-fairscape/results/
 ```
 
 `ro-crate-metadata.json`, `provenance-graph.{json,html}`, `ro-crate-datasheet.html`,

@@ -26,14 +26,14 @@ or to a pod path the host cannot see.
 make install                       # from the repo root
 cd examples/k8s-kind
 
-kind create cluster --name nf-prov --config kind-cluster.yaml
+kind create cluster --name nf-fairscape --config kind-cluster.yaml
 kubectl apply -f k8s-storage.yaml
 
 nextflow run main.nf
 ls results/
 ```
 
-Tear down with `kind delete cluster --name nf-prov`.
+Tear down with `kind delete cluster --name nf-fairscape`.
 
 ## Pods must not run as root
 
@@ -50,7 +50,7 @@ securityContext = [
 ]
 ```
 
-If you drop that, clean up with `docker exec nf-prov-control-plane rm -rf <path>`
+If you drop that, clean up with `docker exec nf-fairscape-control-plane rm -rf <path>`
 — the node container is root and shares the mount.
 
 ## What it showed

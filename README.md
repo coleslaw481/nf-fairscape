@@ -1,9 +1,10 @@
 # nf-fairscape
 
+## Summary
+
 Nextflow plugin that writes a [FAIRSCAPE](https://fairscape.github.io/) EVI RO-Crate for
-each pipeline run. A fork of [nf-prov](https://github.com/nextflow-io/nf-prov) that emits
-the [EVI ontology](https://w3id.org/EVI#) provenance model natively instead of a Workflow
-Run RO-Crate.
+each pipeline run — the [EVI ontology](https://w3id.org/EVI#) provenance model emitted
+natively, rather than converted from another provenance format after the fact.
 
 The crate conforms to [RO-Crate 1.2](https://w3id.org/ro/crate/1.2), the
 [FAIRSCAPE profile 0.1](https://w3id.org/fairscape/profile/0.1) and
@@ -18,18 +19,27 @@ and each process become `EVI:Software`. Full mapping: [docs/FAIRSCAPE.md](docs/F
 | -------------- | ---------------- |
 | 0.1.x | 25.10 |
 
-## Getting started
+## Get started
 
-Install locally (it isn't in the plugin registry yet):
+Requires Nextflow 25.10 or later. Enable the plugin in `nextflow.config` and Nextflow
+fetches it from the [plugin registry](https://registry.nextflow.io) on the first run:
+
+```groovy
+plugins { id 'nf-fairscape@0.1.0' }
+```
+
+Until the first registry release lands, build and install it locally instead — same
+result, one extra step ([docs/PUBLISHING.md](docs/PUBLISHING.md)):
 
 ```bash
 make install
+nextflow run <pipeline> -plugins nf-fairscape@0.1.0
 ```
 
-Enable it in `nextflow.config`:
+A configured run looks like this:
 
 ```groovy
-plugins { id 'nf-fairscape' }
+plugins { id 'nf-fairscape@0.1.0' }
 
 outputDir = params.outdir
 
@@ -66,6 +76,19 @@ links. nf-core pipelines already set `publish_dir_mode = 'copy'`. Files the crat
 does not contain (work-directory intermediates) carry
 [`localPath`](docs/FAIRSCAPE.md#where-a-datasets-bytes-are-contenturl-vs-localpath) instead of a
 `contentUrl`, so the graph keeps them without claiming they are retrievable.
+
+## Examples
+
+Every example is a self-contained pipeline plus the config that switches the plugin on.
+Install the plugin, then run one:
+
+```bash
+make install
+cd examples/letters-chain && nextflow run . -plugins nf-fairscape@0.1.0
+```
+
+That writes `results/ro-crate-metadata.json` and the derived artifacts next to it — open
+`results/provenance-graph.html` to see the run's evidence graph.
 
 Runnable demos: [examples/reverse-list](examples/reverse-list) (minimal),
 [examples/letters-chain](examples/letters-chain) (multi-step chain). New to Nextflow
@@ -198,22 +221,26 @@ validates the crate they publish against `fairscape_models`.
 See [docs/DATASHEET.md](docs/DATASHEET.md#parity-with-the-cli) for the per-artifact claims and
 the deviations.
 
-## Differences from nf-prov
+## Scope
 
-- One output format (flat `fairscape` scope, no `prov.formats`); BCO/DAG/GEXF/WRROC
-  renderers removed — use nf-prov for those.
-- Files are referenced via `contentUrl`, never copied into the crate.
-- Successful native (`exec:`) tasks are included; upstream drops them on fresh runs.
-- The observer/renderer framework is kept intact to ease rebasing onto upstream.
+- One output format: an EVI RO-Crate, configured through a flat `fairscape` config scope.
+  Other provenance serializations — BCO, GEXF, a DAG dump,
+  [Workflow Run RO-Crate](https://www.researchobject.org/workflow-run-crate/) — are out of
+  scope; [nf-prov](https://github.com/nextflow-io/nf-prov) emits those.
+- Files are referenced by `contentUrl` rather than copied into the crate. The exception is
+  the workflow itself, which `includeWorkflow` copies so the crate can still say what ran
+  after it is zipped and moved.
+- Successful native (`exec:`) tasks are described like any other task.
 
 ## Limitations
 
 - Only `path` values become Datasets; `val` inputs appear only in the task `command` and the
-  run `parameter` list (same as nf-prov).
+  run `parameter` list.
 - EVI has one timestamp (`dateCreated`) and no failure model. Per-task times and container
   images ride along as extra keys the FAIRSCAPE schema accepts but doesn't define.
 
 ## License
 
-Apache-2.0, same as nf-prov. Modified fork of
-[nextflow-io/nf-prov](https://github.com/nextflow-io/nf-prov) v1.7.0.
+Apache-2.0 — full text in [LICENSE](LICENSE). Parts of the plugin framework derive from
+[nf-prov](https://github.com/nextflow-io/nf-prov), also Apache-2.0; [NOTICE](NOTICE)
+records what and from where.

@@ -12,7 +12,7 @@ results/        published outputs + RO-Crate
 
 ## 1. Copy up
 
-Upload `cellmaps-rivanna.tar.gz` to `/project/clarklab/nf/cellmap` (OOD Files,
+Zip the directory above and upload the zipped `cellmaps-rivanna.tar.gz` to `/project/clarklab/nf/cellmap` (OOD Files,
 no VPN: https://ood.hpc.virginia.edu). Then in a shell:
 
 ```bash
