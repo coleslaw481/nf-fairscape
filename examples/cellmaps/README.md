@@ -88,58 +88,57 @@ contents.
 
 ## Inputs
 
-Defaults point at the **U2OS / Bioplex example inputs bundled inside the
-downloader packages**, so it reproduces the canonical Cell Maps demo with no
-extra data:
+Defaults point at the **U2OS / BioPlex example inputs bundled in this
+directory** under `inputs/`, so it reproduces the canonical Cell Maps demo with
+no extra data:
 
 | param          | default (under `base_dir`)                             | meaning                     |
 | -------------- | ------------------------------------------------------ | --------------------------- |
-| `--samples`    | `cellmaps_imagedownloader/examples/samples.csv`        | HPA IF images to download   |
-| `--unique`     | `cellmaps_imagedownloader/examples/unique.csv`         | best antibodies per gene    |
-| `--edgelist`   | `cellmaps_ppidownloader/examples/edgelist.tsv`         | AP-MS edges                 |
-| `--baitlist`   | `cellmaps_ppidownloader/examples/baitlist.tsv`         | AP-MS baits                 |
-| `--provenance` | `cellmaps_imagedownloader/examples/provenance.json`    | describes all four inputs   |
+| `--samples`    | `inputs/samples.csv`                                   | HPA IF images to download   |
+| `--unique`     | `inputs/unique.csv`                                    | best antibodies per gene    |
+| `--edgelist`   | `inputs/edgelist.tsv`                                  | AP-MS edges                 |
+| `--baitlist`   | `inputs/baitlist.tsv`                                  | AP-MS baits                 |
+| `--provenance` | `inputs/provenance.json`                               | describes all four inputs   |
 | `--cell_line`  | `U2OS`                                                 | HPA cell line to fetch      |
 
 To run on **different data**, point those params at your own files (a `samples`
-CSV + `unique` CSV in HPA format, and an `edgelist` + `baitlist` TSV in Bioplex
+CSV + `unique` CSV in HPA format, and an `edgelist` + `baitlist` TSV in BioPlex
 format) and supply a matching `provenance.json` — no edits to `main.nf` needed.
 
-## Environment (`cellmaps` conda env)
+## Environment (isolated conda envs)
 
-Runs in a conda env named `cellmaps` (`params.python = 'conda run -n cellmaps python'`)
-holding all six tools. Building one takes:
+Each process runs in its own isolated Conda environment declared in `main.nf`
+and defined under `envs/`:
 
-```bash
-conda create -y -n cellmaps python=3.10
-ENV=$(conda run -n cellmaps python -c 'import sys; print(sys.prefix)')
-# install the two downloaders editable, so imports resolve from Nextflow's
-# per-task work dir (a cwd-relative namespace package is not enough):
-conda run -n cellmaps pip install --no-deps -e ./cellmaps_imagedownloader -e ./cellmaps_ppidownloader
-conda run -n cellmaps pip install mygene
-# pin numpy<2 and scipy<1.15 INTO the env (see "Incompatibilities" below):
-$ENV/bin/python -m pip install --ignore-installed --no-deps numpy==1.26.4 scipy==1.13.1
-# fairscape-cli has to be reachable at the env-adjacent path the tools shell out to:
-$ENV/bin/python -m pip install --force-reinstall --no-deps fairscape-cli==1.2.4
-```
+| process | environment |
+| ------- | ----------- |
+| `IMAGE_DOWNLOAD` | `envs/imagedownloader.yml` |
+| `PPI_DOWNLOAD` | `envs/ppidownloader.yml` |
+| `IMAGE_EMBEDDING` | `envs/image_embedding.yml` |
+| `PPI_EMBEDDING` | `envs/ppi_embedding.yml` |
+| `COEMBEDDING` | `envs/coembedding.yml` |
+| `HIERARCHY` | `envs/hierarchy.yml` |
 
-If user-site packages shadow the env (Python searches `~/.local` first in some setups), set
-`params.env_site_packages` to `$ENV/lib/python3.10/site-packages` so the env's numpy/scipy
-win; set `params.extra_ld_library_path` if torch can't find its CUDA libs.
+Nextflow creates and caches these environments when `conda.enabled = true` in
+`nextflow.config`. On shared systems, set `conda.cacheDir` in `nextflow.config`
+to persistent project storage so the six environments are created once and
+reused. The `metadata:` block in each environment YAML is also the source of the
+Fairscape software metadata; the software version is derived from the pinned
+`cellmaps_*==...` pip dependency in that same file.
 
 ### Incompatibilities that were fixed
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `ModuleNotFoundError: cellmaps_imagedownloader` | downloaders not installed (only a cwd namespace-package illusion) | `pip install -e` both into `cellmaps` |
-| `numpy.core.multiarray failed to import` (cv2) | `~/.local` numpy 2.x shadows env; opencv built for numpy 1.x | env `numpy==1.26.4` + `PYTHONPATH` front |
+| `ModuleNotFoundError: cellmaps_imagedownloader` | downloader package missing from the process environment | install the pinned downloader package through the corresponding `envs/*.yml` |
+| `numpy.core.multiarray failed to import` (cv2) | `~/.local` numpy 2.x shadows the process env; opencv built for numpy 1.x | isolated process env with compatible numpy on the Python path |
 | HiDeF `'numpy.float64' has no attribute '_variable'` | scipy ≥1.15 exports `abs`, hijacked by HiDeF's `from scipy.stats import *` | env `scipy==1.13.1` |
-| `can't open .../bin/fairscape-cli` | tools call the python-adjacent CLI path | install `fairscape-cli` into env bin |
+| `can't open .../bin/fairscape-cli` | tools call the python-adjacent CLI path | install `fairscape-cli` into the relevant process env bin |
 | coembedding `no overlapping embeddings` | stock `cellmaps_ppidownloader` writes `ppi_edgelist.tsv` with **CRLF**; node2vec then glues the trailing `\r` onto gene names (`"MED19\r"`) so they never match the clean image genes | PPI_DOWNLOAD strips CRLF→LF from the crate's `*.tsv` before node2vec (see main.nf) |
 
 ## The stock example DOES overlap (CRLF was the real bug)
 
-The bundled downloader examples ARE the official `cellmaps_pipeline` matched example
+The bundled inputs ARE the official `cellmaps_pipeline` matched example
 (HPA U2OS IF images + BioPlex AP-MS): the image `gene_names` and the AP-MS edgelist
 symbols overlap by **~166/168 genes**. Coembedding failed only because the stock
 `cellmaps_ppidownloader` emits its intermediate `ppi_edgelist.tsv` with **CRLF** line
@@ -147,16 +146,14 @@ endings; node2vec keeps the trailing `\r` on each line's second gene, so PPI emb
 node names come out as `"GENE\r"` and match nothing. Stripping CRLF in PPI_DOWNLOAD
 takes the coembedding overlap from **0 → 163** — verified directly on the outputs.
 
-So the defaults run the real stock matched example. `smoke-data/` (a synthetic PPI
-network generated by `make_smoke_ppi.py` over the image genes) remains only as an
-optional fully-offline fixture — pass `--edgelist=smoke-data/edgelist.tsv
---baitlist=smoke-data/baitlist.tsv` to use it. For your own study, override
-`--edgelist`/`--baitlist`/`--samples`/`--unique` with matched data for the same cells.
+So the defaults run the real stock matched example from `inputs/`. For your own
+study, override `--edgelist`/`--baitlist`/`--samples`/`--unique` with matched
+data for the same cells.
 
 ## Run
 
 ```bash
-# out-of-the-box end-to-end demo (bundled U2OS images + smoke-data PPI)
+# out-of-the-box end-to-end demo (bundled U2OS / BioPlex example inputs)
 nextflow run main.nf \
   -work-dir /path/to/cellmaps-run/work \
   --outdir  /path/to/cellmaps-run/results
