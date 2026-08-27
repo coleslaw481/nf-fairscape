@@ -146,7 +146,10 @@ process PPI_DOWNLOAD {
 
     # The downloader may write CRLF line endings. Normalize them before
     # node2vec so gene names do not retain a trailing carriage return.
-    find ppi_download -name '*.tsv' -exec sed -i 's/\\r\$//' {} +
+    # Not all platforms support the sed option below. Commenting out
+    # for now since this should really be a bug that is fixed in 
+    # Created ticket: https://github.com/idekerlab/cellmaps_ppidownloader/issues/10
+    # find ppi_download -name '*.tsv' -exec sed -i 's/\\r\$//' {} +
     """
 }
 
