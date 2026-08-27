@@ -1,0 +1,16 @@
+name: cellmaps-image-embedding
+
+metadata:
+  softwareName: "Cell Maps ImmunoFluorescent Image Embedder"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to generate embeddings from Human Protein Atlas immunofluorescence images."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_image_embedding"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_image_embedding==0.3.3

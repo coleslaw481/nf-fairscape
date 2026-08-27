@@ -1,0 +1,16 @@
+name: cellmaps-ppi-embedding
+
+metadata:
+  softwareName: "Cell Maps PPI Embedder"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to generate embeddings from protein-protein interaction networks using node2vec."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_ppi_embedding"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_ppi_embedding==0.4.3

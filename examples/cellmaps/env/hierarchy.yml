@@ -1,0 +1,16 @@
+name: cellmaps-generate-hierarchy
+
+metadata:
+  softwareName: "Cell Maps Generate Hierarchy"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to generate hierarchies from protein-protein interaction networks and Cell Maps coembeddings using HiDeF."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_generate_hierarchy"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_generate_hierarchy==0.2.5

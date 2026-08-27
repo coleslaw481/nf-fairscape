@@ -1,0 +1,16 @@
+name: cellmaps-coembedding
+
+metadata:
+  softwareName: "Cell Maps CoEmbedder"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to generate coembeddings from immunofluorescence image embeddings and PPI network embeddings."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_coembedding"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_coembedding==1.5.0

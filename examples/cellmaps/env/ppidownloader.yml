@@ -1,0 +1,16 @@
+name: cellmaps-ppidownloader
+
+metadata:
+  softwareName: "Cell Maps PPI Downloader"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to download or load protein-protein interaction data for the Cell Mapping Toolkit."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_ppidownloader"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_ppidownloader==0.2.2

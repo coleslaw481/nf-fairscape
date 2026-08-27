@@ -1,0 +1,16 @@
+name: cellmaps-imagedownloader
+
+metadata:
+  softwareName: "Cell Maps Image Downloader"
+  softwareAuthor: "Cell Maps team"
+  softwareDescription: "A tool to download specified image data from the Human Protein Atlas website using CSV files or to copy data from a CM4AI dataset."
+  softwareUrl: "https://github.com/idekerlab/cellmaps_imagedownloader"
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - cellmaps_imagedownloader==0.3.0

@@ -1,0 +1,38 @@
+{
+  "name": "Example input dataset",
+  "organization-name": "CM4AI",
+  "project-name": "Example",
+  "edgelist": {
+    "name": "Antoine Forget sample edgelist",
+    "author": "Krogan Lab",
+    "version": "1.0",
+    "date-published": "07-31-2023",
+    "description": "AP-MS Protein interactions on HSC2 cell line, example dataset",
+    "data-format": "tsv"
+  },
+  "baitlist": {
+    "name": "Antoine Forget sample baitlist",
+    "author": "Krogan Lab",
+    "version": "1.0",
+    "date-published": "07-31-2023",
+    "description": "AP-MS Baits used for Protein interactions on HSC2 cell line",
+    "data-format": "tsv"
+  },
+  "samples": {
+    "name": "u2os HPA IF images",
+    "author": "Author of dataset",
+    "version": "Version of dataset",
+    "date-published": "Date dataset was published",
+    "description": "Description of dataset",
+    "data-format": "csv"
+  },
+  "unique": {
+    "name": "u2os HPA IF images unique",
+    "author": "Author of dataset",
+    "version": "Version of dataset",
+    "date-published": "Date dataset was published",
+    "description": "Description of dataset",
+    "data-format": "csv"
+  }
+}
+
