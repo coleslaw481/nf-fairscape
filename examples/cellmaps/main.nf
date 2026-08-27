@@ -1,7 +1,5 @@
 #!/usr/bin/env nextflow
 
-import org.yaml.snakeyaml.Yaml
-
 /*
  * Stock Cell Maps pipeline
  *
@@ -36,7 +34,7 @@ nextflow.enable.dsl = 2
 def loadSoftwareConfig(String yamlPath, String packageName) {
 
     def yamlFile = file(yamlPath, checkIfExists: true)
-    def config = new Yaml().load(yamlFile.text)
+    def config = new org.yaml.snakeyaml.Yaml().load(yamlFile.text)
 
     if (!config.metadata) {
         error "Missing metadata block in ${yamlPath}"
